@@ -17,7 +17,7 @@ public class ProjectsController : ControllerBase
         _evaluationService = evaluationService;
     }
 
-    [HttpGet("ranking")]
+    [HttpGet("rankings")]
     public async Task<List<ProjectRankingDTO>> GetRanking()
     {
         var projects = await _projectService.GetAsync();
@@ -49,8 +49,20 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<List<Project>> Get([FromQuery] string? search, [FromQuery] string? category, [FromQuery] string? technology) =>
-        await _projectService.GetAsync(search, category, technology);
+    public async Task<List<Project>> Get([FromQuery] string? search, [FromQuery] string? category, [FromQuery] string? technology, [FromQuery] string? studentId, [FromQuery] string? teacherId) =>
+        await _projectService.GetAsync(search, category, technology, studentId, teacherId);
+
+    [HttpPost("{id:length(24)}/assign/{teacherId}")]
+    public async Task<IActionResult> AssignTeacher(string id, string teacherId)
+    {
+        var project = await _projectService.GetAsync(id);
+        if (project is null) return NotFound();
+
+        project.AssignedTeacherId = teacherId;
+        await _projectService.UpdateAsync(id, project);
+
+        return Ok(project);
+    }
 
     [HttpGet("{id:length(24)}")]
     public async Task<ActionResult<Project>> Get(string id)
@@ -71,6 +83,13 @@ public class ProjectsController : ControllerBase
         await _projectService.CreateAsync(newProject);
 
         return CreatedAtAction(nameof(Get), new { id = newProject.Id }, newProject);
+    }
+
+    [HttpPost("batch")]
+    public async Task<IActionResult> PostBatch(IEnumerable<Project> projects)
+    {
+        await _projectService.CreateManyAsync(projects);
+        return Ok(new { count = projects.Count() });
     }
 
     [HttpPut("{id:length(24)}")]

@@ -20,20 +20,18 @@ public class Evaluation
 
     public RubricScores Scores { get; set; } = new();
 
+    public string? RubricId { get; set; }
+    public Dictionary<string, int> DetailedScores { get; set; } = new();
+
     public string? Feedback { get; set; }
-    public string? EvidenceUrl { get; set; }
+    public string? EvidencePhotoBase64 { get; set; }
+    public string? SignatureBase64 { get; set; }
 }
 
 public class RubricScores
 {
-    [Range(1, 5, ErrorMessage = "Score must be between 1 and 5")]
-    public int Innovation { get; set; }
+    // Dictionary of Criterion Name/Id -> Score mapping
+    public Dictionary<string, int> Values { get; set; } = new();
 
-    [Range(1, 5, ErrorMessage = "Score must be between 1 and 5")]
-    public int Usability { get; set; }
-
-    [Range(1, 5, ErrorMessage = "Score must be between 1 and 5")]
-    public int TechnicalComplexity { get; set; }
-
-    public double Average => (Innovation + Usability + TechnicalComplexity) / 3.0;
+    public double Average => Values.Any() ? Values.Values.Average() : 0;
 }

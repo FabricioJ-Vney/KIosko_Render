@@ -1,7 +1,6 @@
 using System.Net.Http.Json;
 using Kritik.Shared.Models;
 
-
 namespace Kritik.App.Services;
 
 public class ProjectService
@@ -69,6 +68,34 @@ public class ProjectService
         {
             Console.WriteLine($"Error fetching project {id}: {ex.Message}");
             return null;
+        }
+    }
+
+    public async Task<bool> UpsertProjectsAsync(List<Project> projects)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/projects/batch", projects);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error importing projects: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateProjectAsync(string id, Project project)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync($"api/projects/{id}", project);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating project {id}: {ex.Message}");
+            return false;
         }
     }
 }

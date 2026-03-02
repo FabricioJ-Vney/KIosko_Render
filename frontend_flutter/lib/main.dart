@@ -14,7 +14,10 @@ class KritikApp extends StatelessWidget {
     return MaterialApp(
       title: 'Kritik App',
       theme: AppTheme.lightTheme,
-      home: const LoginScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LoginScreen(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }

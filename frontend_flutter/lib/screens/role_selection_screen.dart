@@ -28,20 +28,31 @@ class RoleSelectionScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
-            const Expanded(
-              child: AnimatedRoleCard(
-                title: 'Alumno',
-                icon: Icons.school_outlined,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const AnimatedRoleCard(
+                      title: 'Alumno',
+                      role: 'Student',
+                      icon: Icons.school_outlined,
+                    ),
+                    const SizedBox(height: 16),
+                    const AnimatedRoleCard(
+                      title: 'Profesor o Sinodal',
+                      role: 'Evaluator',
+                      icon: Icons.assignment_ind_outlined,
+                    ),
+                    const SizedBox(height: 16),
+                    const AnimatedRoleCard(
+                      title: 'Administrador',
+                      role: 'Admin',
+                      icon: Icons.admin_panel_settings_outlined,
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 24),
-            const Expanded(
-              child: AnimatedRoleCard(
-                title: 'Profesor o Sinodal',
-                icon: Icons.assignment_ind_outlined,
-              ),
-            ),
-            const SizedBox(height: 48),
           ],
         ),
       ),
@@ -51,9 +62,10 @@ class RoleSelectionScreen extends StatelessWidget {
 
 class AnimatedRoleCard extends StatefulWidget {
   final String title;
+  final String role;
   final IconData icon;
 
-  const AnimatedRoleCard({super.key, required this.title, required this.icon});
+  const AnimatedRoleCard({super.key, required this.title, required this.role, required this.icon});
 
   @override
   State<AnimatedRoleCard> createState() => _AnimatedRoleCardState();
@@ -95,7 +107,7 @@ class _AnimatedRoleCardState extends State<AnimatedRoleCard>
         _controller.reverse();
         Navigator.of(
           context,
-        ).push(MaterialPageRoute(builder: (_) => const ProjectListScreen()));
+        ).push(MaterialPageRoute(builder: (_) => ProjectListScreen(role: widget.role)));
       },
       onTapCancel: () => _controller.reverse(),
       child: AnimatedBuilder(

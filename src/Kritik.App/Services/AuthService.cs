@@ -1,16 +1,19 @@
 using System.Net.Http.Json;
 using Kritik.Shared.Models;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Kritik.App.Services;
 
 public class AuthService
 {
     private readonly HttpClient _httpClient;
+    private readonly AuthenticationStateProvider _authStateProvider;
     private User? _currentUser;
 
-    public AuthService(HttpClient httpClient)
+    public AuthService(HttpClient httpClient, AuthenticationStateProvider authStateProvider)
     {
         _httpClient = httpClient;
+        _authStateProvider = authStateProvider;
     }
 
     public async Task<User?> LoginAsync(string email, string password)
@@ -32,6 +35,16 @@ public class AuthService
                         FullName = loginResponse.FullName,
                         Role = loginResponse.Role
                     };
+                    
+                    if (_authStateProvider is CustomAuthStateProvider customAuthProvider)
+                    {
+                        customAuthProvider.NotifyUserLoggedIn(_currentUser, loginResponse.Token);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Warning: Expected _authStateProvider to be CustomAuthStateProvider");
+                    }
+
                     return _currentUser;
                 }
             }
@@ -43,9 +56,27 @@ public class AuthService
         return null;
     }
 
+    public async Task<bool> RegisterAsync(User newUser)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/auth/register", newUser);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Registration failed: {ex.Message}");
+            return false;
+        }
+    }
+
     public async Task LogoutAsync()
     {
         _currentUser = null;
+        if (_authStateProvider is CustomAuthStateProvider customAuthProvider)
+        {
+            customAuthProvider.NotifyUserLoggedOut();
+        }
         await Task.CompletedTask;
     }
     

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Devices;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Kritik.App;
 
@@ -36,6 +37,12 @@ public static class MauiProgram
         builder.Services.AddScoped<Services.EvaluationService>();
         builder.Services.AddScoped<Services.ToastService>();
         builder.Services.AddScoped<Services.AuthService>();
+        builder.Services.AddScoped<Services.CriteriaService>();
+        builder.Services.AddScoped<Services.ExportService>();
+        builder.Services.AddSingleton<Services.NotificationService>();
+        
+        builder.Services.AddAuthorizationCore();
+        builder.Services.AddScoped<AuthenticationStateProvider, Services.CustomAuthStateProvider>();
 
 		return builder.Build();
 	}

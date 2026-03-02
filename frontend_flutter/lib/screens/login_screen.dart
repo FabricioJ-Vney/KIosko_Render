@@ -2,9 +2,18 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'role_selection_screen.dart';
+import 'project_list_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  String _selectedRole = 'Student';
+  final TextEditingController _idController = TextEditingController();
 
   void _navigateToRoleSelection(BuildContext context) {
     Navigator.of(context).push(
@@ -35,12 +44,33 @@ class LoginScreen extends StatelessWidget {
               ),
               const SizedBox(height: 48),
               TextFormField(
-                decoration: const InputDecoration(hintText: 'ID Institucional'),
+                controller: _idController,
+                decoration: const InputDecoration(hintText: 'ID Institucional / Usuario'),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedRole,
+                decoration: const InputDecoration(hintText: 'Selecciona tu Rol'),
+                items: const [
+                  DropdownMenuItem(value: 'Student', child: Text('Alumno / Proyectista')),
+                  DropdownMenuItem(value: 'Evaluator', child: Text('Evaluador / Juez')),
+                  DropdownMenuItem(value: 'Admin', child: Text('Administrador')),
+                ],
+                onChanged: (val) => setState(() => _selectedRole = val!),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  // TODO: [MAUI Migration] Call API Service login method here
+                  if (_idController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Por favor ingresa tu ID')),
+                    );
+                    return;
+                  }
+                  // In a real app, call ApiService.login here
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => ProjectListScreen(role: _selectedRole)),
+                  );
                 },
                 child: const Text('Iniciar Sesión'),
               ),
@@ -83,7 +113,7 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: const Text('Acceso como Invitado / Sinodal'),
+                child: const Text('Acceso como Invitado'),
               ),
             ],
           ),

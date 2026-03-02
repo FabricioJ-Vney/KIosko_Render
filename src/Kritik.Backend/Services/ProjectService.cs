@@ -24,7 +24,7 @@ public class ProjectService
         _projectsCollection.Indexes.CreateMany(new[] { indexModelCategory, indexModelTechnologies });
     }
 
-    public async Task<List<Project>> GetAsync(string? search = null, string? category = null, string? technology = null)
+    public async Task<List<Project>> GetAsync(string? search = null, string? category = null, string? technology = null, string? studentId = null, string? teacherId = null)
     {
         var builder = Builders<Project>.Filter;
         var filters = new List<FilterDefinition<Project>>();
@@ -48,6 +48,16 @@ public class ProjectService
             filters.Add(builder.AnyEq(x => x.Technologies, technology));
         }
 
+        if (!string.IsNullOrEmpty(studentId))
+        {
+            filters.Add(builder.Eq(x => x.StudentId, studentId));
+        }
+
+        if (!string.IsNullOrEmpty(teacherId))
+        {
+            filters.Add(builder.Eq(x => x.AssignedTeacherId, teacherId));
+        }
+
         var finalFilter = filters.Count > 0 ? builder.And(filters) : builder.Empty;
 
         return await _projectsCollection.Find(finalFilter).ToListAsync();
@@ -58,6 +68,9 @@ public class ProjectService
 
     public async Task CreateAsync(Project newProject) =>
         await _projectsCollection.InsertOneAsync(newProject);
+
+    public async Task CreateManyAsync(IEnumerable<Project> projects) =>
+        await _projectsCollection.InsertManyAsync(projects);
 
     public async Task UpdateAsync(string id, Project updatedProject) =>
         await _projectsCollection.ReplaceOneAsync(x => x.Id == id, updatedProject);

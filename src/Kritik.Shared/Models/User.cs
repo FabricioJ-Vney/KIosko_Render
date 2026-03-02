@@ -12,7 +12,7 @@ public class User
     public string Username { get; set; } = null!;
     public string Password { get; set; } = null!; // Plain text for MVP, should be hashed in production
     public string FullName { get; set; } = null!;
-    public string Role { get; set; } = "Evaluator"; // Evaluator, Admin
+    public string Role { get; set; } = "Student"; // Student, Evaluator, Admin
 }
 
 public class LoginRequest

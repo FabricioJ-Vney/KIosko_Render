@@ -16,7 +16,11 @@ public class Project
     public List<string> Members { get; set; } = new();
     public string FairLocation { get; set; } = null!;
 
+    public string? StudentId { get; set; }
+    public string? AssignedTeacherId { get; set; }
+
     public List<Video> Videos { get; set; } = new();
     public List<Document> Documents { get; set; } = new();
     public string ImageUrl { get; set; } = "https://via.placeholder.com/150";
+    public string? CoverImageUrl { get; set; }
 }

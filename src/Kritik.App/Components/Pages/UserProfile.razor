@@ -3,40 +3,65 @@
 @using Kritik.App.Services
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject AuthService AuthService
+@inject EvaluationService EvaluationService
 
-<div class="profile-container">
-    <div class="profile-header card">
-        <div class="avatar-circle">
-            @(user?.FullName?.Substring(0, 1) ?? "U")
+<div class="p-4 no-scrollbar" style="max-height: 100vh; overflow-y: auto;">
+    <div class="text-center mb-5 animate-slide-up">
+        <div class="mx-auto shadow-lg d-flex align-items-center justify-content-center mb-3" 
+             style="width: 100px; height: 100px; border-radius: 35px; background: linear-gradient(135deg, #FFC107 0%, #FFB300 100%); color: black; font-size: 2.5rem; font-weight: 800;">
+            @(user?.FullName?.Substring(0, 1).ToUpper() ?? "U")
         </div>
-        <h3 class="tech-gradient-text">@(user?.FullName ?? "Usuario Invitado")</h3>
-        <span class="role-badge">@(user?.Role ?? "Evaluador")</span>
+        <h2 class="fw-bold mb-1">@(user?.FullName ?? "Innovador")</h2>
+        <span class="badge bg-dark rounded-pill px-3 py-2">@(user?.Role == "Evaluator" ? "Juez Oficial" : "Participante")</span>
     </div>
 
-    <div class="settings-section card">
-        <h4>Preferencias de Interfaz</h4>
-        <p class="instruction-text">Personaliza cómo ves el Kiosko según la iluminación del lugar.</p>
-        
-        <div class="theme-switch">
-            <label>Modo de Pantalla</label>
-            <div class="button-group">
-                <button class="btn-theme @(!isDarkMode ? "active" : "")" @onclick="() => SetTheme(false)">
-                    ☀️ Día
-                </button>
-                <button class="btn-theme @(isDarkMode ? "active" : "")" @onclick="() => SetTheme(true)">
-                    🌙 Noche
-                </button>
+    <div class="row g-3 animate-slide-up" style="animation-delay: 0.1s;">
+        <div class="col-6">
+            <div class="glass-card p-3 text-center h-100" style="border-radius: 24px;">
+                <div class="text-warning mb-2"><i class="bi bi-star-fill fs-3"></i></div>
+                <div class="h3 fw-bold m-0">@evaluationCount</div>
+                <small class="text-muted">Aportes</small>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="glass-card p-3 text-center h-100" style="border-radius: 24px;">
+                <div class="text-info mb-2"><i class="bi bi-lightning-charge-fill fs-3"></i></div>
+                <div class="h3 fw-bold m-0">@((evaluationCount * 50))</div>
+                <small class="text-muted">Puntos XP</small>
             </div>
         </div>
     </div>
 
-    <div class="stats-card card">
-        <h4>Tu Actividad</h4>
-        <p>Evaluaciones realizadas: <span class="highlight">@evaluationCount</span></p>
+    <div class="mt-5 animate-slide-up" style="animation-delay: 0.2s;">
+        <h6 class="text-muted text-uppercase fw-bold small mb-3 px-2">Preferencias</h6>
+        <div class="glass-card p-2" style="border-radius: 24px;">
+            <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-light p-2 rounded-3"><i class="bi bi-moon-stars"></i></div>
+                    <span class="fw-bold">Modo Oscuro</span>
+                </div>
+                <div class="form-check form-switch fs-4">
+                    <input class="form-check-input" type="checkbox" checked="@isDarkMode" @onchange="ToggleTheme" />
+                </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-light p-2 rounded-3"><i class="bi bi-bell"></i></div>
+                    <span class="fw-bold">Notificaciones</span>
+                </div>
+                <div class="form-check form-switch fs-4">
+                    <input class="form-check-input" type="checkbox" checked />
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="logout-section">
-        <button class="btn btn-outline-danger w-100" @onclick="Logout">Cerrar Sesión</button>
+    <div class="mt-5 pt-4">
+        <button class="btn btn-outline-danger w-100 py-3 rounded-pill fw-bold border-2" @onclick="Logout">
+            <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+        </button>
+        <p class="text-center text-muted small mt-4">Kritik v2.1.0 Commercial Edition</p>
     </div>
 </div>
 
@@ -47,28 +72,26 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Simulación de datos de usuario (Mock) ya que no hay autenticación real implementada aún
-        // En producción: user = await Http.GetFromJsonAsync<User>("api/auth/me");
-        user = new User 
-        { 
-            FullName = "Marlene Chablé", 
-            Role = "Profesor", 
-            Username = "marlene" 
-        };
+        user = AuthService.GetCurrentUser();
+        isDarkMode = Microsoft.Maui.Storage.Preferences.Default.Get("IsDarkMode", false);
         
-        
-        evaluationCount = 12; // KPI simulado
-        await Task.CompletedTask;
+        if (user != null)
+        {
+            var evals = await EvaluationService.GetEvaluationsAsync();
+            evaluationCount = evals.Count(e => e.EvaluatorId == user.Id || e.EvaluatorId == user.Username);
+        }
     }
 
-    private async Task SetTheme(bool dark)
+    private async Task ToggleTheme(ChangeEventArgs e)
     {
-        isDarkMode = dark;
-        await JSRuntime.InvokeVoidAsync("setTheme", dark ? "dark-theme" : "light-theme");
+        isDarkMode = (bool)e.Value!;
+        Microsoft.Maui.Storage.Preferences.Default.Set("IsDarkMode", isDarkMode);
+        await JSRuntime.InvokeVoidAsync("setTheme", isDarkMode ? "dark" : "light");
     }
 
-    private void Logout()
+    private async Task Logout()
     {
-        NavigationManager.NavigateTo("/");
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("/", forceLoad: true);
     }
 }
