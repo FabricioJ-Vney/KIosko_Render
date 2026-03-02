@@ -109,7 +109,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.1),
+          backgroundColor: color.withValues(alpha: 0.1),
           foregroundColor: color,
           child: Text('#${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
         ),

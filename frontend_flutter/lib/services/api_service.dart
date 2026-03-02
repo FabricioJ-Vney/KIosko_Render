@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
+import '../models/assignment_model.dart';
 import '../models/project_model.dart';
+import '../models/rubric_model.dart';
 import '../models/evaluation_model.dart';
 import '../models/criterion_model.dart';
 
@@ -13,8 +15,8 @@ class ApiService {
   static String get _baseUrl {
     if (kIsWeb) return 'http://localhost:5229';
     // Use local IP for real device connection or 10.0.2.2 for emulator
-    // 192.168.1.10 is the detected IP from ipconfig
-    return Platform.isAndroid ? 'http://192.168.1.10:5229' : 'http://localhost:5229';
+    // 10.3.1.142 is the detected IP from ipconfig
+    return Platform.isAndroid ? 'http://10.3.1.142:5229' : 'http://localhost:5229';
   }
 
   ApiService()
@@ -69,12 +71,15 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> getRubrics({String? creatorId}) async {
+  Future<List<Rubric>> getRubrics({String? creatorId}) async {
     try {
       final response = await _dio.get('/rubrics', queryParameters: {
         if (creatorId != null) 'creatorId': creatorId,
       });
-      return response.data as List<dynamic>;
+      if (response.statusCode == 200) {
+        return (response.data as List).map((x) => Rubric.fromJson(x)).toList();
+      }
+      return [];
     } catch (e) {
       debugPrint('Get rubrics error: $e');
       return [];
@@ -138,6 +143,48 @@ class ApiService {
     } catch (e) {
       debugPrint('Get rankings error: $e');
       return [];
+    }
+  }
+
+  Future<String?> uploadFile(File file) async {
+    try {
+      String fileName = file.path.split('/').last;
+      FormData formData = FormData.fromMap({
+        "file": await MultipartFile.fromFile(file.path, filename: fileName),
+      });
+
+      final response = await _dio.post('/Upload', data: formData);
+      if (response.statusCode == 200) {
+        return response.data['url'];
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Upload error: $e');
+      return null;
+    }
+  }
+
+  // Assignments
+  Future<List<Assignment>> getAssignments({String? teacherId}) async {
+    try {
+      final response = await _dio.get('/Assignments', queryParameters: teacherId != null ? {'teacherId': teacherId} : null);
+      if (response.statusCode == 200) {
+        return (response.data as List).map((x) => Assignment.fromJson(x)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Get assignments error: $e');
+      return [];
+    }
+  }
+
+  Future<bool> createAssignment(Assignment assignment) async {
+    try {
+      final response = await _dio.post('/Assignments', data: assignment.toJson());
+      return response.statusCode == 201 || response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Create assignment error: $e');
+      return false;
     }
   }
 }

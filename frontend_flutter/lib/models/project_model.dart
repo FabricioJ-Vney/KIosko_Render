@@ -10,6 +10,7 @@ class Project {
   final String? assignedTeacherId;
   final String? coverImageUrl;
   final String? iconUrl;
+  final String? assignmentId;
 
   Project({
     this.id, 
@@ -22,7 +23,8 @@ class Project {
     this.studentId,
     this.assignedTeacherId,
     this.coverImageUrl,
-    this.iconUrl
+    this.iconUrl,
+    this.assignmentId,
   });
 
   factory Project.fromJson(Map<String, dynamic> json) =>
@@ -38,6 +40,7 @@ class Project {
         assignedTeacherId: json['assignedTeacherId'],
         coverImageUrl: json['coverImageUrl'],
         iconUrl: json['iconUrl'],
+        assignmentId: json['assignmentId'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -52,5 +55,6 @@ class Project {
     'assignedTeacherId': assignedTeacherId,
     'coverImageUrl': coverImageUrl,
     'iconUrl': iconUrl,
+    'assignmentId': assignmentId,
   };
 }

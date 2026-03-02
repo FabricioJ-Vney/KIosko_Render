@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/project_model.dart';
 import '../services/api_service.dart';
+import '../models/assignment_model.dart';
 import '../theme/app_theme.dart';
 
 class StudentUploadScreen extends StatefulWidget {
@@ -21,6 +23,33 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   
   bool _isSubmitting = false;
   List<PlatformFile> _selectedFiles = [];
+  List<Assignment> _assignments = [];
+  String? _selectedAssignmentId;
+  bool _isLoadingAssignments = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAssignments();
+  }
+
+  Future<void> _fetchAssignments() async {
+    try {
+      final assignments = await _apiService.getAssignments();
+      setState(() {
+        _assignments = assignments;
+        _isLoadingAssignments = false;
+      });
+    } catch (e) {
+      debugPrint('Error fetching assignments: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar tareas: $e')),
+        );
+      }
+      setState(() => _isLoadingAssignments = false);
+    }
+  }
 
   Future<void> _pickFiles() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -39,37 +68,55 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   Future<void> _submitProject() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     setState(() => _isSubmitting = true);
 
     try {
+      List<String> uploadedFileUrls = [];
+      
+      // 1. Upload files first
+      for (var platformFile in _selectedFiles) {
+        if (platformFile.path != null) {
+          final url = await _apiService.uploadFile(File(platformFile.path!));
+          if (url != null) {
+            uploadedFileUrls.add(url);
+          }
+        }
+      }
+
+      final selectedAssignment = _assignments.firstWhere((a) => a.id == _selectedAssignmentId);
+
+      // 2. Create project with file URLs and teacher link
       final newProject = Project(
         title: _titleController.text,
-        description: _descriptionController.text,
-        category: _categoryController.text,
         teamName: "Equipo de ${_titleController.text}",
+        category: _categoryController.text,
+        description: _descriptionController.text,
         studentId: widget.studentId,
-        // In a real app, we would upload files to a storage service and save URLs
-        // For now, we'll just send the metadata
+        assignmentId: _selectedAssignmentId,
+        assignedTeacherId: selectedAssignment.teacherId,
+        coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : null,
       );
 
-      // Simple implementation for now (POST to /projects)
       final response = await _apiService.createProjectsBatch([newProject]);
 
       if (mounted) {
         if (response) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Proyecto subido con éxito!')),
+          messenger.showSnackBar(
+            const SnackBar(content: Text('¡Proyecto y archivos subidos con éxito!')),
           );
-          Navigator.pop(context);
+          navigator.pop();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error al subir el proyecto')),
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Error al guardar el proyecto en la base de datos')),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
       }
@@ -97,6 +144,41 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 32),
+              _isLoadingAssignments
+                ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        initialValue: _selectedAssignmentId,
+                        decoration: InputDecoration(
+                          labelText: 'Tarea / Convocatoria',
+                          prefixIcon: const Icon(Icons.assignment),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.refresh),
+                            onPressed: _fetchAssignments,
+                          ),
+                          helperText: _assignments.isEmpty ? 'No hay tareas publicadas' : null,
+                          helperStyle: const TextStyle(color: Colors.red),
+                        ),
+                        items: _assignments.map((a) => DropdownMenuItem(
+                          value: a.id,
+                          child: Text(a.title),
+                        )).toList(),
+                        onChanged: _assignments.isEmpty ? null : (val) => setState(() => _selectedAssignmentId = val),
+                        validator: (val) => val == null ? 'Por favor selecciona una tarea' : null,
+                      ),
+                      if (_assignments.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Aviso: Tu docente debe crear una convocatoria antes de que puedas subir tu proyecto.',
+                            style: TextStyle(color: Colors.orange.shade800, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                    ],
+                  ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -107,11 +189,12 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _categoryController,
+                initialValue: _categoryController.text,
                 decoration: const InputDecoration(
                   labelText: 'Categoría',
                   prefixIcon: Icon(Icons.category),
                 ),
+                onChanged: (v) => _categoryController.text = v,
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
               ),
               const SizedBox(height: 16),
@@ -139,7 +222,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                 onPressed: _isSubmitting ? null : _submitProject,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppColors.primaryYellow,
+                  backgroundColor: AppColors.primaryYellow.withOpacity(0.1),
                 ),
                 child: _isSubmitting 
                   ? const CircularProgressIndicator(color: Colors.white)

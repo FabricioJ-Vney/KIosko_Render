@@ -18,6 +18,7 @@ public class Project
 
     public string? StudentId { get; set; }
     public string? AssignedTeacherId { get; set; }
+    public string? AssignmentId { get; set; }
 
     public List<Video> Videos { get; set; } = new();
     public List<Document> Documents { get; set; } = new();

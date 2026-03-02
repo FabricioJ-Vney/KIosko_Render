@@ -6,12 +6,21 @@ import 'evaluation_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'results_screen.dart';
 import 'student_upload_screen.dart';
+import 'assignment_creation_screen.dart';
 import 'rubric_management_screen.dart';
 import 'login_screen.dart';
 
 class ProjectListScreen extends StatefulWidget {
   final String role;
-  const ProjectListScreen({super.key, this.role = 'Student'});
+  final String? userId;
+  final String? userFullName;
+
+  const ProjectListScreen({
+    super.key, 
+    this.role = 'Student',
+    this.userId,
+    this.userFullName,
+  });
 
   @override
   State<ProjectListScreen> createState() => _ProjectListScreenState();
@@ -33,9 +42,9 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Future<void> _fetchProjects() async {
     setState(() => _isLoading = true);
     try {
-      // Demo logic: using hardcoded IDs for role-based view
-      String? studentId = widget.role == 'Student' ? 'student_1' : null;
-      String? teacherId = widget.role == 'Evaluator' ? 'teacher_1' : null;
+      // Use actual IDs from widget instead of hardcoded ones
+      String? studentId = widget.role.toLowerCase() == 'student' ? widget.userId : null;
+      String? teacherId = widget.role.toLowerCase() == 'evaluator' ? widget.userId : null;
 
       final projects = await _apiService.getProjects(
         studentId: studentId, 
@@ -87,14 +96,20 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         ],
       ),
       drawer: _buildDrawer(context),
-      floatingActionButton: (widget.role == 'Admin')
+      floatingActionButton: (widget.role.toLowerCase() == 'admin' || widget.role.toLowerCase() == 'student' || widget.role.toLowerCase() == 'evaluator')
         ? FloatingActionButton.extended(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-            ),
-            label: const Text('Admin Panel'),
-            icon: const Icon(Icons.dashboard_customize),
+              MaterialPageRoute(
+                builder: (_) {
+                  if (widget.role.toLowerCase() == 'admin') return const AdminDashboardScreen();
+                  if (widget.role.toLowerCase() == 'evaluator') return AssignmentCreationScreen(teacherId: widget.userId ?? 'teacher_1');
+                  return StudentUploadScreen(studentId: widget.userId ?? 'student_1');
+                },
+              ),
+            ).then((_) => _fetchProjects()),
+            label: Text(_getFabLabel()),
+            icon: Icon(_getFabIcon()),
             backgroundColor: AppColors.primaryYellow,
           )
         : null,
@@ -109,6 +124,18 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             ],
           ),
     );
+  }
+
+  IconData _getFabIcon() {
+    if (widget.role.toLowerCase() == 'admin') return Icons.dashboard_customize;
+    if (widget.role.toLowerCase() == 'evaluator') return Icons.add_task;
+    return Icons.cloud_upload;
+  }
+
+  String _getFabLabel() {
+    if (widget.role.toLowerCase() == 'admin') return 'Admin Panel';
+    if (widget.role.toLowerCase() == 'evaluator') return 'Nueva Convocatoria';
+    return 'Subir Proyecto';
   }
 
   Widget _buildProjectListCount() {
@@ -205,7 +232,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           if (widget.role == 'Student') ...[
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentUploadScreen(studentId: 'student_1'))),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(studentId: widget.userId ?? 'student_1'))),
               icon: const Icon(Icons.cloud_upload),
               label: const Text('Subir Mi Proyecto'),
               style: OutlinedButton.styleFrom(foregroundColor: AppColors.primaryYellow, side: const BorderSide(color: AppColors.primaryYellow)),
@@ -266,7 +293,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: AppColors.primaryYellow.withOpacity(0.1),
+        color: AppColors.primaryYellow.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Icon(icon, color: AppColors.primaryYellow),
@@ -308,7 +335,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isEvaluated ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+        color: isEvaluated ? Colors.green.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -328,17 +355,17 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             title: const Text('Inicio'),
             onTap: () => Navigator.pop(context),
           ),
-          if (widget.role == 'Student')
+          if (widget.role.toLowerCase() == 'student')
             ListTile(
               leading: const Icon(Icons.cloud_upload_outlined),
               title: const Text('Subir Mi Proyecto'),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentUploadScreen(studentId: 'student_1'))),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(studentId: widget.userId ?? 'student_1'))),
             ),
-          if (widget.role == 'Evaluator')
+          if (widget.role.toLowerCase() == 'evaluator')
             ListTile(
               leading: const Icon(Icons.list_alt),
               title: const Text('Mis Rúbricas'),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RubricManagementScreen(teacherId: 'teacher_1'))),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RubricManagementScreen(teacherId: widget.userId ?? 'teacher_1'))),
             ),
           ListTile(
             leading: const Icon(Icons.bar_chart_outlined),
