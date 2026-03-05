@@ -20,6 +20,9 @@ public class AssignmentService
     public async Task<List<Assignment>> GetByTeacherAsync(string teacherId) =>
         await _assignmentsCollection.Find(x => x.TeacherId == teacherId).ToListAsync();
 
+    public async Task<Assignment?> GetByAccessCodeAsync(string accessCode) =>
+        await _assignmentsCollection.Find(x => x.AccessCode == accessCode).FirstOrDefaultAsync();
+
     public async Task<Assignment?> GetAsync(string id) =>
         await _assignmentsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 

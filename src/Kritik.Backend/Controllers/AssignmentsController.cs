@@ -31,6 +31,14 @@ public class AssignmentsController : ControllerBase
         return assignment;
     }
 
+    [HttpGet("code/{code}")]
+    public async Task<ActionResult<Assignment>> GetByCode(string code)
+    {
+        var assignment = await _assignmentService.GetByAccessCodeAsync(code);
+        if (assignment is null) return NotFound();
+        return assignment;
+    }
+
     [HttpPost]
     public async Task<IActionResult> Post(Assignment newAssignment)
     {
