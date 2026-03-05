@@ -9,15 +9,22 @@ public class UserService
 {
     private readonly IMongoCollection<User> _usersCollection;
 
-    public UserService(IOptions<MongoDBSettings> settings, IMongoDatabase database)
+    public UserService(IOptions<MongoDBSettings> settings, IMongoDatabase database, ILogger<UserService> logger)
     {
         _usersCollection = database.GetCollection<User>("usuario");
 
-        // Create unique index for Email
-        var indexKeys = Builders<User>.IndexKeys.Ascending(x => x.Email);
-        var indexOptions = new CreateIndexOptions { Unique = true };
-        var indexModel = new CreateIndexModel<User>(indexKeys, indexOptions);
-        _usersCollection.Indexes.CreateOne(indexModel);
+        try
+        {
+            // Create unique index for Email
+            var indexKeys = Builders<User>.IndexKeys.Ascending(x => x.Email);
+            var indexOptions = new CreateIndexOptions { Unique = true };
+            var indexModel = new CreateIndexModel<User>(indexKeys, indexOptions);
+            _usersCollection.Indexes.CreateOne(indexModel);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Could not create unique index for Email. This might be because of duplicate or null emails in existing data.");
+        }
     }
 
     public async Task<User?> GetAsync(string id) =>

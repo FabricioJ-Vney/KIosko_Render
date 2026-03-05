@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import '../models/project_model.dart';
 import '../services/api_service.dart';
 import '../models/assignment_model.dart';
+import '../models/rubric_model.dart';
+import '../models/evaluation_model.dart';
 import '../theme/app_theme.dart';
 
 class StudentUploadScreen extends StatefulWidget {
