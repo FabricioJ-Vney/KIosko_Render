@@ -15,8 +15,8 @@ class ApiService {
   static String get _baseUrl {
     if (kIsWeb) return 'http://localhost:5229';
     // Use local IP for real device connection or 10.0.2.2 for emulator
-    // 10.3.1.142 is the detected IP from ipconfig
-    return Platform.isAndroid ? 'http://10.3.1.142:5229' : 'http://localhost:5229';
+    // 192.168.100.62 is the detected IP from ipconfig
+    return Platform.isAndroid ? 'http://192.168.100.62:5229' : 'http://localhost:5229';
   }
 
   ApiService()

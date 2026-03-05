@@ -9,12 +9,14 @@ namespace Kritik.Backend.Controllers;
 public class SeedController : ControllerBase
 {
     private readonly ProjectService _projectService;
-    private readonly UserService _userService; // Injected
+    private readonly UserService _userService;
+    private readonly AssignmentService _assignmentService;
 
-    public SeedController(ProjectService projectService, UserService userService)
+    public SeedController(ProjectService projectService, UserService userService, AssignmentService assignmentService)
     {
         _projectService = projectService;
         _userService = userService;
+        _assignmentService = assignmentService;
     }
 
     [HttpPost]
@@ -93,6 +95,20 @@ public class SeedController : ControllerBase
             await _userService.CreateAsync(defaultUser);
         }
         
-        return Ok(new { message = "Seeded projects and default user." });
+        // Seed Default Assignment if none exist
+        var existingAssignments = await _assignmentService.GetAsync();
+        if (existingAssignments.Count == 0)
+        {
+            var defaultAssignment = new Assignment
+            {
+                Title = "Convocatoria Principal 2026",
+                Description = "Sube aquí tu proyecto final para la feria de ciencias.",
+                TeacherId = "evaluador", // Match the seeded user
+                DueDate = DateTime.UtcNow.AddMonths(1)
+            };
+            await _assignmentService.CreateAsync(defaultAssignment);
+        }
+        
+        return Ok(new { message = "Seeded projects, default user, and assignment." });
     }
 }

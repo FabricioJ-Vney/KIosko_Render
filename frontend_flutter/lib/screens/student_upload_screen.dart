@@ -150,32 +150,40 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedAssignmentId,
+                        value: _selectedAssignmentId,
                         decoration: InputDecoration(
                           labelText: 'Tarea / Convocatoria',
                           prefixIcon: const Icon(Icons.assignment),
                           suffixIcon: IconButton(
                             icon: const Icon(Icons.refresh),
-                            onPressed: _fetchAssignments,
+                            onPressed: () {
+                              setState(() => _isLoadingAssignments = true);
+                              _fetchAssignments();
+                            },
                           ),
-                          helperText: _assignments.isEmpty ? 'No hay tareas publicadas' : null,
-                          helperStyle: const TextStyle(color: Colors.red),
+                          hintText: _assignments.isEmpty ? 'No hay tareas disponibles' : 'Selecciona una tarea',
+                          helperText: _assignments.isEmpty 
+                            ? 'Pide a tu docente que cree una convocatoria' 
+                            : null,
+                          helperStyle: TextStyle(
+                            color: _assignments.isEmpty ? Colors.orange.shade900 : null,
+                            fontWeight: _assignments.isEmpty ? FontWeight.bold : null
+                          ),
                         ),
-                        items: _assignments.map((a) => DropdownMenuItem(
-                          value: a.id,
-                          child: Text(a.title),
-                        )).toList(),
+                        items: _assignments.isNotEmpty 
+                          ? _assignments.map((a) => DropdownMenuItem(
+                              value: a.id,
+                              child: Text(a.title),
+                            )).toList()
+                          : [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('No hay convocatorias activas', style: TextStyle(color: Colors.grey)),
+                              )
+                            ],
                         onChanged: _assignments.isEmpty ? null : (val) => setState(() => _selectedAssignmentId = val),
                         validator: (val) => val == null ? 'Por favor selecciona una tarea' : null,
                       ),
-                      if (_assignments.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            'Aviso: Tu docente debe crear una convocatoria antes de que puedas subir tu proyecto.',
-                            style: TextStyle(color: Colors.orange.shade800, fontSize: 12, fontWeight: FontWeight.bold),
-                          ),
-                        ),
                     ],
                   ),
               const SizedBox(height: 16),
