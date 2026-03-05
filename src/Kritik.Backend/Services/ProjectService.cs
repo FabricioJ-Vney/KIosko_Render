@@ -58,6 +58,11 @@ public class ProjectService
             filters.Add(builder.Eq(x => x.AssignedTeacherId, teacherId));
         }
 
+        if (!string.IsNullOrEmpty(assignmentId))
+        {
+            filters.Add(builder.Eq(x => x.AssignmentId, assignmentId));
+        }
+
         var finalFilter = filters.Count > 0 ? builder.And(filters) : builder.Empty;
 
         return await _projectsCollection.Find(finalFilter).ToListAsync();

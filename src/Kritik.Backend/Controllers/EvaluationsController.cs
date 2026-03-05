@@ -32,6 +32,19 @@ public class EvaluationsController : ControllerBase
         return evaluation;
     }
 
+    [HttpGet("project/{projectId:length(24)}")]
+    public async Task<ActionResult<Evaluation>> GetByProject(string projectId)
+    {
+        var evaluation = await _evaluationService.GetByProjectIdAsync(projectId);
+
+        if (evaluation is null)
+        {
+            return NotFound();
+        }
+
+        return evaluation;
+    }
+
     [HttpPost]
     public async Task<IActionResult> Post(Evaluation newEvaluation)
     {

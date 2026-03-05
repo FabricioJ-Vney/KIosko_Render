@@ -42,11 +42,13 @@ class ApiService {
     }
   }
 
-  Future<List<Project>> getProjects({String? studentId, String? teacherId}) async {
+  Future<List<Project>> getProjects({String? studentId, String? teacherId, String? assignmentId, String? search}) async {
     try {
       final response = await _dio.get('/projects', queryParameters: {
         if (studentId != null) 'studentId': studentId,
         if (teacherId != null) 'teacherId': teacherId,
+        if (assignmentId != null) 'assignmentId': assignmentId,
+        if (search != null) 'search': search,
       });
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
@@ -56,6 +58,32 @@ class ApiService {
     } catch (e) {
       debugPrint('Get projects error: $e');
       return [];
+    }
+  }
+
+  Future<Rubric?> getRubricById(String id) async {
+    try {
+      final response = await _dio.get('/rubrics/$id');
+      if (response.statusCode == 200) {
+        return Rubric.fromJson(response.data);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Get rubric by id error: $e');
+      return null;
+    }
+  }
+
+  Future<Evaluation?> getEvaluationByProjectId(String projectId) async {
+    try {
+      final response = await _dio.get('/evaluations/project/$projectId');
+      if (response.statusCode == 200) {
+        return Evaluation.fromJson(response.data);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Get evaluation error: $e');
+      return null;
     }
   }
 

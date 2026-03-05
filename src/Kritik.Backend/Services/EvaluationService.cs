@@ -26,6 +26,9 @@ public class EvaluationService
     public async Task<Evaluation?> GetAsync(string id) =>
         await _evaluationsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
+    public async Task<Evaluation?> GetByProjectIdAsync(string projectId) =>
+        await _evaluationsCollection.Find(x => x.ProjectId == projectId).FirstOrDefaultAsync();
+
     public async Task CreateAsync(Evaluation newEvaluation) =>
         await _evaluationsCollection.InsertOneAsync(newEvaluation);
 

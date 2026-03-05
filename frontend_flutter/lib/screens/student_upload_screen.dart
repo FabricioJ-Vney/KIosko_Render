@@ -30,10 +30,53 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   Assignment? _joinedAssignment;
   bool _isSearchingCode = false;
 
+  Rubric? _assignmentRubric;
+  Evaluation? _existingEvaluation;
+  bool _isLoadingDetails = false;
+
   @override
   void initState() {
     super.initState();
     _fetchAssignments();
+  }
+
+  Future<void> _onAssignmentChanged(String? id) async {
+    if (id == null) return;
+    
+    setState(() {
+      _selectedAssignmentId = id;
+      _isLoadingDetails = true;
+    });
+
+    try {
+      final assignment = _assignments.firstWhere((a) => a.id == id);
+      
+      // 1. Fetch Rubric if exists
+      if (assignment.rubricId != null) {
+        _assignmentRubric = await _apiService.getRubricById(assignment.rubricId!);
+      } else {
+        _assignmentRubric = null;
+      }
+
+      // 2. Check if student already has a project for this assignment
+      final projects = await _apiService.getProjects(
+        studentId: widget.studentId,
+        assignmentId: id,
+      );
+
+      if (projects.isNotEmpty) {
+        final project = projects.first;
+        // 3. Fetch evaluation if exists
+        _existingEvaluation = await _apiService.getEvaluationByProjectId(project.id!);
+      } else {
+        _existingEvaluation = null;
+      }
+
+    } catch (e) {
+      debugPrint('Error fetching assignment details: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingDetails = false);
+    }
   }
 
   Future<void> _fetchAssignments() async {
@@ -64,9 +107,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         if (assignment != null) {
           setState(() {
             _joinedAssignment = assignment;
-            _selectedAssignmentId = assignment.id;
             _assignments = [assignment, ..._assignments.where((a) => a.id != assignment.id)];
           });
+          await _onAssignmentChanged(assignment.id);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('¡Convocatoria encontrada: ${assignment.title}!')),
           );
@@ -161,6 +204,86 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     }
   }
 
+  Widget _buildAssignmentDetails() {
+    final assignment = _assignments.firstWhere((a) => a.id == _selectedAssignmentId);
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(assignment.description, style: const TextStyle(fontSize: 14)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (assignment.rubricId != null)
+                TextButton.icon(
+                  onPressed: () => _showRubricDialog(),
+                  icon: const Icon(Icons.rule, size: 18),
+                  label: const Text('Ver Rúbrica'),
+                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                ),
+              const Spacer(),
+              if (assignment.dueDate != null)
+                Text(
+                  'Entrega: ${assignment.dueDate!.day}/${assignment.dueDate!.month}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+            ],
+          ),
+          if (_existingEvaluation != null) ...[
+            const Divider(),
+            const Text('Retroalimentación del Docente:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+            const SizedBox(height: 4),
+            Text(
+              _existingEvaluation!.feedback ?? 'Sin comentarios por ahora.',
+              style: const TextStyle(fontStyle: FontStyle.italic),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showRubricDialog() {
+    if (_assignmentRubric == null) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Rúbrica: ${_assignmentRubric!.name}'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: _assignmentRubric!.items.length,
+            separatorBuilder: (_, __) => const Divider(),
+            itemBuilder: (context, index) {
+              final crit = _assignmentRubric!.items[index];
+              return ListTile(
+                title: Text(crit.criteria, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(crit.description),
+                trailing: Text('${crit.maxPoints} pts', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                contentPadding: EdgeInsets.zero,
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -227,35 +350,32 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                             },
                           ),
                           hintText: _assignments.isEmpty ? 'No hay tareas disponibles' : 'Selecciona una tarea',
-                          helperText: _assignments.isEmpty 
-                            ? 'Pide a tu docente que cree una convocatoria' 
-                            : null,
-                          helperStyle: TextStyle(
-                            color: _assignments.isEmpty ? Colors.orange.shade900 : null,
-                            fontWeight: _assignments.isEmpty ? FontWeight.bold : null
-                          ),
                         ),
                         items: _assignments.isNotEmpty 
                           ? _assignments.map((a) => DropdownMenuItem(
                               value: a.id,
                               child: Text(a.title),
                             )).toList()
-                          : [
-                              const DropdownMenuItem(
-                                value: null,
-                                child: Text('No hay convocatorias activas', style: TextStyle(color: Colors.grey)),
-                              )
-                            ],
-                        onChanged: _assignments.isEmpty ? null : (val) => setState(() => _selectedAssignmentId = val),
+                          : [],
+                        onChanged: _assignments.isEmpty ? null : (val) => _onAssignmentChanged(val),
                         validator: (val) => val == null ? 'Por favor selecciona una tarea' : null,
                       ),
+                      if (_selectedAssignmentId != null && !_isLoadingDetails) ...[
+                        const SizedBox(height: 16),
+                        _buildAssignmentDetails(),
+                      ],
+                      if (_isLoadingDetails)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
                     ],
                   ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
-                  labelText: 'Título del Proyecto',
+                  labelText: 'Título de Proyecto / Tarea',
                   prefixIcon: Icon(Icons.title),
                 ),
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
