@@ -43,7 +43,7 @@ public class AssignmentsController : ControllerBase
     public async Task<IActionResult> Post(Assignment newAssignment)
     {
         await _assignmentService.CreateAsync(newAssignment);
-        return CreatedAtAction(nameof(Get), new { id = newAssignment.Id }, newAssignment);
+        return Ok(newAssignment);
     }
 
     [HttpPut("{id:length(24)}")]

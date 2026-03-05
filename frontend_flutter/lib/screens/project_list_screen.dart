@@ -80,49 +80,187 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     }).toList();
   }
 
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Proyectos', style: Theme.of(context).textTheme.headlineMedium),
-        backgroundColor: AppColors.backgroundOffWhite,
-        elevation: 0,
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchProjects,
-          ),
-        ],
+    bool isEvaluator = widget.role.toLowerCase() == 'evaluator';
+
+    return DefaultTabController(
+      length: isEvaluator ? 2 : 1,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Proyectos', style: Theme.of(context).textTheme.headlineMedium),
+          backgroundColor: AppColors.backgroundOffWhite,
+          elevation: 0,
+          bottom: isEvaluator 
+            ? const TabBar(
+                tabs: [
+                  Tab(text: 'Proyectos Recibidos'),
+                  Tab(text: 'Mis Convocatorias'),
+                ],
+                labelColor: AppColors.textPrimary,
+                indicatorColor: AppColors.primaryYellow,
+              )
+            : null,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _fetchProjects,
+            ),
+          ],
+        ),
+        drawer: _buildDrawer(context),
+        floatingActionButton: (widget.role.toLowerCase() == 'admin' || widget.role.toLowerCase() == 'student' || widget.role.toLowerCase() == 'evaluator')
+          ? FloatingActionButton.extended(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) {
+                    if (widget.role.toLowerCase() == 'admin') return const AdminDashboardScreen();
+                    if (widget.role.toLowerCase() == 'evaluator') return AssignmentCreationScreen(teacherId: widget.userId ?? 'teacher_1');
+                    return StudentUploadScreen(studentId: widget.userId ?? 'student_1');
+                  },
+                ),
+              ).then((_) => _fetchProjects()),
+              label: Text(_getFabLabel()),
+              icon: Icon(_getFabIcon()),
+              backgroundColor: AppColors.primaryYellow,
+            )
+          : null,
+        body: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : isEvaluator
+            ? TabBarView(
+                children: [
+                   _buildProjectTab(),
+                   _buildAssignmentTab(),
+                ],
+              )
+            : _buildProjectTab(),
       ),
-      drawer: _buildDrawer(context),
-      floatingActionButton: (widget.role.toLowerCase() == 'admin' || widget.role.toLowerCase() == 'student' || widget.role.toLowerCase() == 'evaluator')
-        ? FloatingActionButton.extended(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) {
-                  if (widget.role.toLowerCase() == 'admin') return const AdminDashboardScreen();
-                  if (widget.role.toLowerCase() == 'evaluator') return AssignmentCreationScreen(teacherId: widget.userId ?? 'teacher_1');
-                  return StudentUploadScreen(studentId: widget.userId ?? 'student_1');
+    );
+  }
+
+  Widget _buildProjectTab() {
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildFilterChips(),
+        _buildProjectListCount(),
+        Expanded(child: _buildProjectList()),
+      ],
+    );
+  }
+
+  Widget _buildAssignmentTab() {
+    return FutureBuilder<List<Assignment>>(
+      future: _apiService.getAssignments(teacherId: widget.userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final assignments = snapshot.data ?? [];
+        if (assignments.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.assignment_late_outlined, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text('No has creado ninguna convocatoria aún'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (_) => AssignmentCreationScreen(teacherId: widget.userId!))
+                  ).then((_) => setState(() {})),
+                  child: const Text('Crear Primera Convocatoria'),
+                ),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: assignments.length,
+          itemBuilder: (context, index) {
+            final a = assignments[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                title: Text(a.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text('Código: ${a.accessCode ?? "---"}'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () => _showAssignmentDetails(a),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAssignmentDetails(Assignment a) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(a.title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(a.description, style: const TextStyle(color: Colors.grey)),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primaryYellow.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primaryYellow),
+              ),
+              child: Column(
+                children: [
+                  const Text('Comparte este código con tus alumnos:', style: TextStyle(fontSize: 12)),
+                  const SizedBox(height: 8),
+                  Text(a.accessCode ?? 'N/A', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text('Alumnos que han entregado:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Expanded(
+              child: FutureBuilder<List<Project>>(
+                future: _apiService.getProjects(assignmentId: a.id),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                  final list = snapshot.data ?? [];
+                  if (list.isEmpty) return const Center(child: Text('Nadie ha entregado todavía', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)));
+                  return ListView.builder(
+                    itemCount: list.length,
+                    itemBuilder: (context, index) => ListTile(
+                      leading: const Icon(Icons.person),
+                      title: Text(list[index].teamName ?? 'Alumno sin nombre'),
+                      subtitle: Text(list[index].category ?? 'Proyecto'),
+                      onTap: () {
+                         Navigator.pop(context);
+                         Navigator.push(context, MaterialPageRoute(builder: (_) => EvaluationScreen(projectId: list[index].id, projectName: list[index].title ?? 'Proyecto')));
+                      },
+                    ),
+                  );
                 },
               ),
-            ).then((_) => _fetchProjects()),
-            label: Text(_getFabLabel()),
-            icon: Icon(_getFabIcon()),
-            backgroundColor: AppColors.primaryYellow,
-          )
-        : null,
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : Column(
-            children: [
-              _buildSearchBar(),
-              _buildFilterChips(),
-              _buildProjectListCount(),
-              Expanded(child: _buildProjectList()),
-            ],
-          ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
