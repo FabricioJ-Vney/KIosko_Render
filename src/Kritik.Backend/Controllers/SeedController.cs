@@ -12,12 +12,14 @@ public class SeedController : ControllerBase
     private readonly ProjectService _projectService;
     private readonly UserService _userService;
     private readonly AssignmentService _assignmentService;
+    private readonly RubricService _rubricService;
 
-    public SeedController(ProjectService projectService, UserService userService, AssignmentService assignmentService)
+    public SeedController(ProjectService projectService, UserService userService, AssignmentService assignmentService, RubricService rubricService)
     {
         _projectService = projectService;
         _userService = userService;
         _assignmentService = assignmentService;
+        _rubricService = rubricService;
     }
 
     [HttpPost]
@@ -109,6 +111,25 @@ public class SeedController : ControllerBase
                 DueDate = DateTime.UtcNow.AddMonths(1)
             };
             await _assignmentService.CreateAsync(defaultAssignment);
+        }
+
+        // Seed Default Global Rubric
+        var existingRubrics = await _rubricService.GetAsync();
+        if (existingRubrics.Count == 0)
+        {
+            var defaultRubric = new Rubric
+            {
+                Name = "Criterios de Evaluación General",
+                IsGlobal = true,
+                Items = new List<Criterion>
+                {
+                    new Criterion { Name = "Innovación", Points = 10, Description = "Originalidad y creatividad del proyecto." },
+                    new Criterion { Name = "Impacto Social", Points = 10, Description = "Potencial beneficio para la comunidad." },
+                    new Criterion { Name = "Uso de Tecnología", Points = 10, Description = "Correcta implementación de las herramientas técnicas." },
+                    new Criterion { Name = "Presentación", Points = 10, Description = "Claridad y profesionalismo al exponer." }
+                }
+            };
+            await _rubricService.CreateAsync(defaultRubric);
         }
         
         return Ok(new { message = "Seeded projects, default user, and assignment." });
