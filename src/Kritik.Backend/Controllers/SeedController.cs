@@ -121,12 +121,12 @@ public class SeedController : ControllerBase
             {
                 Name = "Criterios de Evaluación General",
                 IsGlobal = true,
-                Items = new List<Criterion>
+                Items = new List<RubricItem>
                 {
-                    new Criterion { Name = "Innovación", Points = 10, Description = "Originalidad y creatividad del proyecto." },
-                    new Criterion { Name = "Impacto Social", Points = 10, Description = "Potencial beneficio para la comunidad." },
-                    new Criterion { Name = "Uso de Tecnología", Points = 10, Description = "Correcta implementación de las herramientas técnicas." },
-                    new Criterion { Name = "Presentación", Points = 10, Description = "Claridad y profesionalismo al exponer." }
+                    new RubricItem { Criteria = "Innovación", MaxPoints = 10, Description = "Originalidad y creatividad del proyecto." },
+                    new RubricItem { Criteria = "Impacto Social", MaxPoints = 10, Description = "Potencial beneficio para la comunidad." },
+                    new RubricItem { Criteria = "Uso de Tecnología", MaxPoints = 10, Description = "Correcta implementación de las herramientas técnicas." },
+                    new RubricItem { Criteria = "Presentación", MaxPoints = 10, Description = "Claridad y profesionalismo al exponer." }
                 }
             };
             await _rubricService.CreateAsync(defaultRubric);
