@@ -60,26 +60,64 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
     }
   }
 
+  String _generateAccessCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return List.generate(6, (index) => chars[DateTime.now().microsecond % chars.length]).join();
+  }
+
   Future<void> _saveAssignment() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
     try {
+      final accessCode = _generateAccessCode();
       final assignment = Assignment(
         title: _titleController.text,
         description: _descriptionController.text,
         teacherId: widget.teacherId,
         rubricId: _selectedRubricId,
         dueDate: _selectedDate,
+        accessCode: accessCode,
       );
 
       final success = await _apiService.createAssignment(assignment);
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Convocatoria creada con éxito!')),
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text('¡Convocatoria Publicada!'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Comparte este código con tus alumnos para que puedan subir sus proyectos:'),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.primaryYellow, width: 2),
+                    ),
+                    child: Text(
+                      accessCode,
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context, true); // Go back
+                  },
+                  child: const Text('Entendido'),
+                ),
+              ],
+            ),
           );
-          Navigator.pop(context, true);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Error al crear la convocatoria')),

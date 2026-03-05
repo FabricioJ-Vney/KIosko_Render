@@ -19,6 +19,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _categoryController = TextEditingController();
+  final _accessCodeController = TextEditingController();
   final ApiService _apiService = ApiService();
   
   bool _isSubmitting = false;
@@ -26,6 +27,8 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   List<Assignment> _assignments = [];
   String? _selectedAssignmentId;
   bool _isLoadingAssignments = true;
+  Assignment? _joinedAssignment;
+  bool _isSearchingCode = false;
 
   @override
   void initState() {
@@ -48,6 +51,39 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         );
       }
       setState(() => _isLoadingAssignments = false);
+    }
+  }
+
+  Future<void> _searchByCode() async {
+    if (_accessCodeController.text.length < 6) return;
+    
+    setState(() => _isSearchingCode = true);
+    try {
+      final assignment = await _apiService.getAssignmentByCode(_accessCodeController.text.toUpperCase());
+      if (mounted) {
+        if (assignment != null) {
+          setState(() {
+            _joinedAssignment = assignment;
+            _selectedAssignmentId = assignment.id;
+            _assignments = [assignment, ..._assignments.where((a) => a.id != assignment.id)];
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('¡Convocatoria encontrada: ${assignment.title}!')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se encontró ninguna convocatoria con ese código')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al buscar código: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSearchingCode = false);
     }
   }
 
@@ -140,10 +176,39 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Completa los detalles de tu proyecto para que los docentes puedan calificarlo.',
+                'Unete a una convocatoria usando el código que te dio tu docente o selecciona una de la lista.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _accessCodeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Código de Convocatoria',
+                        hintText: 'Ej: AB1234',
+                        prefixIcon: Icon(Icons.vpn_key),
+                      ),
+                      textCapitalization: TextCapitalization.characters,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isSearchingCode ? null : _searchByCode,
+                      child: _isSearchingCode 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Buscar'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 24),
               _isLoadingAssignments
                 ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
                 : Column(
