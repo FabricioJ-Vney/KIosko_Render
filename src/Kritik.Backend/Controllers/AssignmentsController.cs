@@ -24,7 +24,7 @@ public class AssignmentsController : ControllerBase
     }
 
     [HttpGet("{id:length(24)}")]
-    public async Task<ActionResult<Assignment>> Get(string id)
+    public async Task<ActionResult<Assignment>> GetById(string id)
     {
         var assignment = await _assignmentService.GetAsync(id);
         if (assignment is null) return NotFound();
