@@ -24,7 +24,7 @@ public class ProjectService
         _projectsCollection.Indexes.CreateMany(new[] { indexModelCategory, indexModelTechnologies });
     }
 
-    public async Task<List<Project>> GetAsync(string? search = null, string? category = null, string? technology = null, string? studentId = null, string? teacherId = null)
+    public async Task<List<Project>> GetAsync(string? search = null, string? category = null, string? technology = null, string? studentId = null, string? teacherId = null, string? assignmentId = null)
     {
         var builder = Builders<Project>.Filter;
         var filters = new List<FilterDefinition<Project>>();

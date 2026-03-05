@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'role_selection_screen.dart';
 import 'project_list_screen.dart';
+import 'register_screen.dart';
+import 'verification_screen.dart';
 import '../services/api_service.dart';
 import '../models/user_model.dart';
+import 'package:dio/dio.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -51,12 +54,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 48),
                 TextFormField(
                   controller: _idController,
-                  decoration: const InputDecoration(hintText: 'ID Institucional / Usuario'),
+                  decoration: const InputDecoration(
+                    hintText: 'Correo Electrónico',
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
                 ),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(hintText: 'Contraseña (Opcional)'),
+                  decoration: const InputDecoration(
+                    hintText: 'Contraseña',
+                    prefixIcon: Icon(Icons.lock),
+                  ),
                 ),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedRole,
@@ -105,8 +116,29 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                     } catch (e) {
                       if (mounted) {
-                        messenger.showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
+                        String errorMessage = 'Error al iniciar sesión';
+                        if (e is DioException) {
+                          errorMessage = e.response?.data.toString() ?? errorMessage;
+                          
+                          if (errorMessage.contains('no verificado')) {
+                             // Option to go verify
+                             ScaffoldMessenger.of(context).showSnackBar(
+                               SnackBar(
+                                 content: Text(errorMessage),
+                                 action: SnackBarAction(
+                                   label: 'Verificar',
+                                   onPressed: () => Navigator.of(context).push(
+                                     MaterialPageRoute(builder: (_) => VerificationScreen(email: _idController.text))
+                                   ),
+                                 ),
+                               ),
+                             );
+                             return;
+                          }
+                        }
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(errorMessage)),
                         );
                       }
                     } finally {
@@ -142,7 +174,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                    );
+                  },
+                  child: const Text('¿No tienes cuenta? Regístrate aquí'),
+                ),
+                const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => _navigateToRoleSelection(context),
                   style: ElevatedButton.styleFrom(

@@ -1,6 +1,7 @@
 using Kritik.Backend.Services;
 using Kritik.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
+using BCrypt.Net;
 
 namespace Kritik.Backend.Controllers;
 
@@ -83,13 +84,14 @@ public class SeedController : ControllerBase
         // Seed Default User
         var defaultUser = new User
         {
-            Username = "evaluador",
-            Password = "password123",
+            Email = "evaluador@kritik.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
             FullName = "Evaluador Demo",
-            Role = "Evaluator"
+            Role = "Evaluator",
+            IsEmailVerified = true
         };
         
-        var existingUser = await _userService.GetByUsernameAsync(defaultUser.Username);
+        var existingUser = await _userService.GetByEmailAsync(defaultUser.Email);
         if (existingUser == null)
         {
             await _userService.CreateAsync(defaultUser);
@@ -103,7 +105,7 @@ public class SeedController : ControllerBase
             {
                 Title = "Convocatoria Principal 2026",
                 Description = "Sube aquí tu proyecto final para la feria de ciencias.",
-                TeacherId = "evaluador", // Match the seeded user
+                TeacherId = "evaluador@kritik.com", // Match the seeded user email/identifier
                 DueDate = DateTime.UtcNow.AddMonths(1)
             };
             await _assignmentService.CreateAsync(defaultAssignment);

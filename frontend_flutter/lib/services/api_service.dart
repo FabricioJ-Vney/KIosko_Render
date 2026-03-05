@@ -26,11 +26,11 @@ class ApiService {
         ),
       );
 
-  Future<User?> login(String username, String password) async {
+  Future<User?> login(String email, String password) async {
     try {
       final response = await _dio.post(
         '/auth/login',
-        data: {'username': username, 'password': password},
+        data: {'email': email, 'password': password},
       );
       if (response.statusCode == 200) {
         return User.fromJson(response.data);
@@ -38,7 +38,39 @@ class ApiService {
       return null;
     } catch (e) {
       debugPrint('Login error: $e');
+      rethrow;
+    }
+  }
+
+  Future<String?> register(User user, String password) async {
+    try {
+      final data = user.toJson();
+      data['passwordHash'] = password; // Backend expects plain password in register for hashing
+      
+      final response = await _dio.post('/auth/register', data: data);
+      if (response.statusCode == 200) {
+        return response.data;
+      }
       return null;
+    } catch (e) {
+      debugPrint('Register error: $e');
+      if (e is DioException) {
+        return e.response?.data.toString() ?? 'Error en el servidor';
+      }
+      return 'Error de conexión';
+    }
+  }
+
+  Future<bool> verifyEmail(String email, String code) async {
+    try {
+      final response = await _dio.post('/auth/verify', data: {
+        'email': email,
+        'code': code,
+      });
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Verify error: $e');
+      return false;
     }
   }
 

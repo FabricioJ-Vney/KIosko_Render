@@ -9,15 +9,17 @@ public class User
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
 
-    public string Username { get; set; } = null!;
-    public string Password { get; set; } = null!; // Plain text for MVP, should be hashed in production
+    public string Email { get; set; } = null!;
+    public string PasswordHash { get; set; } = null!;
     public string FullName { get; set; } = null!;
     public string Role { get; set; } = "Student"; // Student, Evaluator, Admin
+    public bool IsEmailVerified { get; set; } = false;
+    public string? VerificationCode { get; set; }
 }
 
 public class LoginRequest
 {
-    public string Username { get; set; } = null!;
+    public string Email { get; set; } = null!;
     public string Password { get; set; } = null!;
 }
 

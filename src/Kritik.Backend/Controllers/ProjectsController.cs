@@ -49,8 +49,8 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<List<Project>> Get([FromQuery] string? search, [FromQuery] string? category, [FromQuery] string? technology, [FromQuery] string? studentId, [FromQuery] string? teacherId) =>
-        await _projectService.GetAsync(search, category, technology, studentId, teacherId);
+    public async Task<List<Project>> Get([FromQuery] string? search, [FromQuery] string? category, [FromQuery] string? technology, [FromQuery] string? studentId, [FromQuery] string? teacherId, [FromQuery] string? assignmentId) =>
+        await _projectService.GetAsync(search, category, technology, studentId, teacherId, assignmentId);
 
     [HttpPost("{id:length(24)}/assign/{teacherId}")]
     public async Task<IActionResult> AssignTeacher(string id, string teacherId)
