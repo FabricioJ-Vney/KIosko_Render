@@ -26,14 +26,18 @@ public class AssignmentsController : ControllerBase
             var activeClassIds = enrollments
                 .Select(e => e.ClassroomId)
                 .ToList();
-            
+
             var allAssignments = new List<Assignment>();
             foreach (var classId in activeClassIds)
             {
                 var classAssignments = await _assignmentService.GetByClassAsync(classId);
                 allAssignments.AddRange(classAssignments);
             }
-            return allAssignments;
+
+            return allAssignments
+                .GroupBy(a => a.Id)
+                .Select(g => g.First())
+                .ToList();
         }
 
         if (!string.IsNullOrEmpty(teacherId))
