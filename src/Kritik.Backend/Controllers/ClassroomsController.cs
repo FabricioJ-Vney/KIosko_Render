@@ -37,7 +37,9 @@ public class ClassroomsController : ControllerBase
             foreach (var id in activeClassIds)
             {
                 var c = await _classroomService.GetAsync(id);
-                if (c != null) classrooms.Add(c);
+                // Only add if the classroom exists AND it's not a broken reference
+                if (c != null && !string.IsNullOrEmpty(c.Id)) 
+                    classrooms.Add(c);
             }
             return classrooms;
         }

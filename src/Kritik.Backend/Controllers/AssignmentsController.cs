@@ -33,6 +33,9 @@ public class AssignmentsController : ControllerBase
             var allAssignments = new List<Assignment>();
             foreach (var classId in activeClassIds)
             {
+                var classroom = await _classroomService.GetAsync(classId);
+                if (classroom == null) continue;
+
                 var classAssignments = await _assignmentService.GetByClassAsync(classId);
                 allAssignments.AddRange(classAssignments);
             }
