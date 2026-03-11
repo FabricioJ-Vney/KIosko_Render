@@ -122,7 +122,17 @@ public class ClassroomsController : ControllerBase
     [HttpGet("{id}/members")]
     public async Task<List<ClassEnrollment>> GetMembers(string id)
     {
-        return await _enrollmentService.GetByClassAsync(id);
+        var enrollments = await _enrollmentService.GetByClassAsync(id);
+        foreach (var enrollment in enrollments)
+        {
+            if (!string.IsNullOrEmpty(enrollment.StudentId))
+            {
+                var user = await _userService.GetAsync(enrollment.StudentId);
+                // Fallback to name if ID is an email or name is missing
+                enrollment.StudentName = user?.FullName ?? enrollment.StudentId;
+            }
+        }
+        return enrollments;
     }
 
     [HttpPatch("enroll/{enrollmentId}/status")]

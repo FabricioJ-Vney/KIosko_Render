@@ -453,7 +453,7 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                         if (members.isEmpty) const Text('No hay solicitudes de alumnos.'),
                         ...members.map((m) => ListTile(
                           leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-                          title: Text(m.studentId),
+                          title: Text(m.studentName ?? m.studentId),
                           subtitle: Text('Estado: ${m.status}'),
                           trailing: m.status == 'Pending' 
                             ? Row(
