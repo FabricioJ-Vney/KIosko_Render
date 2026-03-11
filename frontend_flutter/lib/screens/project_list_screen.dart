@@ -386,14 +386,19 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   studentId: widget.userId ?? '',
                   status: 'Pending',
                 );
-                final success = await _apiService.enrollInClass(enrollment);
+                final result = await _apiService.enrollInClass(enrollment);
                 if (mounted) {
-                  if (success) {
+                  if (result == true) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Solicitud enviada al profesor')));
                     Navigator.pop(context);
-                    _fetchProjects();
+                    if (widget.userId != null) {
+                      _fetchProjects(); 
+                    }
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al enviar solicitud')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Error: $result'), 
+                      backgroundColor: Colors.red
+                    ));
                   }
                 }
               } else {
