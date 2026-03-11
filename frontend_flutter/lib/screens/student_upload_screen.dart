@@ -138,7 +138,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
   Future<void> _fetchAssignments() async {
     try {
-      final assignments = await _apiService.getAssignments();
+      final assignments = await _apiService.getAssignments(studentId: widget.studentId);
       setState(() {
         _assignments = assignments;
         _isLoadingAssignments = false;
@@ -544,6 +544,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         DropdownButtonFormField<String>(
+                          isExpanded: true, // Fix potential infinite width
                           value: _assignments.any((a) => a.id == _selectedAssignmentId) ? _selectedAssignmentId : null,
                           decoration: InputDecoration(
                             labelText: 'Tarea / Convocatoria',

@@ -10,11 +10,13 @@ public class AssignmentsController : ControllerBase
 {
     private readonly AssignmentService _assignmentService;
     private readonly EnrollmentService _enrollmentService;
+    private readonly ClassroomService _classroomService;
 
-    public AssignmentsController(AssignmentService assignmentService, EnrollmentService enrollmentService)
+    public AssignmentsController(AssignmentService assignmentService, EnrollmentService enrollmentService, ClassroomService classroomService)
     {
         _assignmentService = assignmentService;
         _enrollmentService = enrollmentService;
+        _classroomService = classroomService;
     }
 
     [HttpGet]
@@ -41,7 +43,29 @@ public class AssignmentsController : ControllerBase
         }
 
         if (!string.IsNullOrEmpty(teacherId))
-            return await _assignmentService.GetByTeacherAsync(teacherId);
+        {
+            // 1. Assignments where they are explicitly the teacher
+            var directAssignments = await _assignmentService.GetByTeacherAsync(teacherId);
+            
+            // 2. Assignments linked to classrooms they own
+            var teacherClasses = await _classroomService.GetByTeacherAsync(teacherId);
+            var classIds = teacherClasses.Select(c => c.Id).ToList();
+            
+            foreach (var classId in classIds)
+            {
+                if (classId != null)
+                {
+                    var classAssignments = await _assignmentService.GetByClassAsync(classId);
+                    directAssignments.AddRange(classAssignments);
+                }
+            }
+            
+            // Ensure unique results
+            return directAssignments
+                .GroupBy(a => a.Id)
+                .Select(g => g.First())
+                .ToList();
+        }
         
         // Return empty list instead of ALL assignments if no filter is provided
         // unless it's an admin context (which would use a different specific endpoint if needed)
