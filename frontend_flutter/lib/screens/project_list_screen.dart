@@ -74,7 +74,15 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         ]);
         
         final projects = List<Project>.from(results[0]);
-        final assignments = List<Assignment>.from(results[1]);
+        // Deduplicate assignments by ID
+        final fetchedAssignments = List<Assignment>.from(results[1]);
+        final Map<String, Assignment> assignmentMap = {};
+        for (var a in fetchedAssignments) {
+          if (a.id != null) {
+            assignmentMap[a.id!] = a;
+          }
+        }
+        final assignments = assignmentMap.values.toList();
         final classrooms = List<Classroom>.from(results[2]);
         
         final submittedAssignmentIds = projects.map((p) => p.assignmentId).toSet();

@@ -31,6 +31,7 @@ public class ClassroomsController : ControllerBase
             var enrollments = await _enrollmentService.GetByStudentAsync(studentId);
             var activeClassIds = enrollments
                 .Select(e => e.ClassroomId)
+                .Distinct()
                 .ToList();
             
             var classrooms = new List<Classroom>();

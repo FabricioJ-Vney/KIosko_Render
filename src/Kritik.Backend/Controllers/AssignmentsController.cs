@@ -28,6 +28,7 @@ public class AssignmentsController : ControllerBase
             var activeClassIds = enrollments
                 .Where(e => e.Status == "Accepted")
                 .Select(e => e.ClassroomId)
+                .Distinct()
                 .ToList();
 
             var allAssignments = new List<Assignment>();

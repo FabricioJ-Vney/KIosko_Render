@@ -70,7 +70,10 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         assignment = await _apiService.getAssignmentById(id);
         if (assignment != null && mounted) {
           setState(() {
-            _assignments = [assignment!, ..._assignments];
+            // Check again before adding to avoid duplicates
+            if (!_assignments.any((a) => a.id == assignment!.id)) {
+              _assignments = [assignment!, ..._assignments];
+            }
           });
         }
       }
@@ -138,9 +141,16 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
   Future<void> _fetchAssignments() async {
     try {
-      final assignments = await _apiService.getAssignments(studentId: widget.studentId);
+      final fetchedAssignments = await _apiService.getAssignments(studentId: widget.studentId);
       setState(() {
-        _assignments = assignments;
+        // Deduplicate by ID
+        final Map<String, Assignment> assignmentMap = {};
+        for (var a in fetchedAssignments) {
+          if (a.id != null) {
+            assignmentMap[a.id!] = a;
+          }
+        }
+        _assignments = assignmentMap.values.toList();
         _isLoadingAssignments = false;
       });
     } catch (e) {
