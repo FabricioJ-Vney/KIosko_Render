@@ -299,6 +299,8 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
     List<Assignment> assignments = [];
     List<Project> studentProjects = [];
     bool loadingDetails = true;
+    String filter = 'Todos';
+
     void loadData(Function setState) {
       debugPrint('DEBUG: Calling loadData for classroom: ${classroom.id}');
       setState(() => loadingDetails = true);
