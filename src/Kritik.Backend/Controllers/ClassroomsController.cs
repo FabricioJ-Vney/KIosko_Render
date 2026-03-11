@@ -123,6 +123,7 @@ public class ClassroomsController : ControllerBase
             return BadRequest("ClassroomId or valid access code is required.");
 
         enrollment.ClassroomId = targetClassroomId;
+        enrollment.Status = "Accepted";
 
         var existing = await _enrollmentService.GetAsync(enrollment.StudentId, enrollment.ClassroomId);
         if (existing != null) return BadRequest("Ya tienes una solicitud para esta clase.");

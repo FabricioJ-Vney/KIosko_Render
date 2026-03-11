@@ -26,6 +26,7 @@ public class AssignmentsController : ControllerBase
         {
             var enrollments = await _enrollmentService.GetByStudentAsync(studentId);
             var activeClassIds = enrollments
+                .Where(e => e.Status == "Accepted")
                 .Select(e => e.ClassroomId)
                 .ToList();
 
@@ -36,8 +37,11 @@ public class AssignmentsController : ControllerBase
                 allAssignments.AddRange(classAssignments);
             }
 
+            // Deduplicate by ID and Title
             return allAssignments
                 .GroupBy(a => a.Id)
+                .Select(g => g.First())
+                .GroupBy(a => a.Title)
                 .Select(g => g.First())
                 .ToList();
         }
@@ -54,9 +58,11 @@ public class AssignmentsController : ControllerBase
                 allAssignments.AddRange(classAssignments);
             }
             
-            // Ensure unique results
+            // Deduplicate by ID and Title
             return allAssignments
                 .GroupBy(a => a.Id)
+                .Select(g => g.First())
+                .GroupBy(a => a.Title)
                 .Select(g => g.First())
                 .ToList();
         }

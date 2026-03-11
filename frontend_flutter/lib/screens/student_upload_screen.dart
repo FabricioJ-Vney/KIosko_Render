@@ -476,233 +476,258 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       body: (_isLoadingAssignments || _isLoadingDetails)
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Status / Info section
-                            if (_existingProject != null) ...[
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade50,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.green.shade100),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const SizedBox(height: 24),
+                              // Status / Info section
+                              if (_existingProject != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.green.shade100),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle, color: Colors.green),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text('¡Tarea Entregada!', 
+                                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                                            Text('Has enviado este proyecto correctamente.', 
+                                                style: TextStyle(fontSize: 12, color: Colors.green.shade700)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                child: Row(
+                                const SizedBox(height: 24),
+                              ] else ...[
+                                Text(
+                                  'Selecciona una convocatoria o únete con un código.',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(Icons.check_circle, color: Colors.green),
-                                    const SizedBox(width: 12),
                                     Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text('¡Tarea Entregada!', 
-                                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                                          Text('Has enviado este proyecto correctamente.', 
-                                              style: TextStyle(fontSize: 12, color: Colors.green.shade700)),
-                                        ],
+                                      child: TextFormField(
+                                        controller: _accessCodeController,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Código de Clase/Tarea',
+                                          hintText: 'Ej: AB1234',
+                                          prefixIcon: Icon(Icons.vpn_key),
+                                        ),
+                                        textCapitalization: TextCapitalization.characters,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    SizedBox(
+                                      height: 56,
+                                      child: ElevatedButton(
+                                        onPressed: _isSearchingCode ? null : _searchByCode,
+                                        child: _isSearchingCode 
+                                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                          : const Text('Buscar'),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              const SizedBox(height: 24),
-                            ] else ...[
-                              Text(
-                                'Únete a una convocatoria con el código de tu docente o selecciona una de la lista.',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: _accessCodeController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Código de Convocatoria',
-                                        hintText: 'Ej: AB1234',
-                                        prefixIcon: Icon(Icons.vpn_key),
-                                      ),
-                                      textCapitalization: TextCapitalization.characters,
+                                const SizedBox(height: 24),
+                                
+                                // Assignment Dropdown
+                                DropdownButtonFormField<String>(
+                                  isExpanded: true,
+                                  value: _assignments.any((a) => a.id == _selectedAssignmentId) ? _selectedAssignmentId : null,
+                                  decoration: InputDecoration(
+                                    labelText: 'Tarea / Convocatoria',
+                                    prefixIcon: const Icon(Icons.assignment),
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.refresh),
+                                      onPressed: () {
+                                        setState(() => _isLoadingAssignments = true);
+                                        _fetchAssignments();
+                                      },
                                     ),
+                                    hintText: _assignments.isEmpty ? 'Sin tareas disponibles' : 'Listado de tareas',
                                   ),
-                                  const SizedBox(width: 8),
-                                  SizedBox(
-                                    height: 56,
-                                    child: ElevatedButton(
-                                      onPressed: _isSearchingCode ? null : _searchByCode,
-                                      child: _isSearchingCode 
-                                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                        : const Text('Buscar'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-                              const Divider(),
-                              const SizedBox(height: 24),
+                                  items: _assignments.map((a) => DropdownMenuItem(
+                                    value: a.id,
+                                    child: Text(a.title, overflow: TextOverflow.ellipsis),
+                                  )).toList(),
+                                  onChanged: _assignments.isEmpty ? null : (val) => _onAssignmentChanged(val),
+                                  validator: (val) {
+                                    if (val == null) return 'Por favor selecciona una tarea';
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                              ],
 
-                              // Assignment Dropdown
-                              DropdownButtonFormField<String>(
-                                isExpanded: true,
-                                value: _assignments.any((a) => a.id == _selectedAssignmentId) ? _selectedAssignmentId : null,
-                                decoration: InputDecoration(
-                                  labelText: 'Tarea / Convocatoria',
-                                  prefixIcon: const Icon(Icons.assignment),
-                                  suffixIcon: IconButton(
-                                    icon: const Icon(Icons.refresh),
-                                    onPressed: () {
-                                      setState(() => _isLoadingAssignments = true);
-                                      _fetchAssignments();
+                              // Details and Form Fields
+                              if (_selectedAssignmentId != null) ...[
+                                _buildAssignmentDetails(),
+                                const SizedBox(height: 24),
+                                
+                                TextFormField(
+                                  controller: _titleController,
+                                  readOnly: _existingProject != null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Título del Proyecto',
+                                    prefixIcon: Icon(Icons.title),
+                                  ),
+                                  validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _teamNameController,
+                                  readOnly: _existingProject != null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Nombre del Equipo',
+                                    prefixIcon: Icon(Icons.group),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _categoryController,
+                                  readOnly: _existingProject != null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Categoría',
+                                    prefixIcon: Icon(Icons.category),
+                                  ),
+                                  validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _descriptionController,
+                                  readOnly: _existingProject != null,
+                                  maxLines: 5,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Descripción detallada',
+                                    alignLabelWithHint: true,
+                                  ),
+                                  validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _repoLinkController,
+                                  readOnly: _existingProject != null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Link de Repositorio (GitHub, etc.)',
+                                    prefixIcon: Icon(Icons.link),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _demoLinkController,
+                                  readOnly: _existingProject != null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Link de Demo o Drive',
+                                    prefixIcon: Icon(Icons.ondemand_video),
+                                  ),
+                                ),
+
+                                // Files section
+                                if (_existingProject != null) ...[
+                                  const SizedBox(height: 32),
+                                  const Text('Archivos Entregados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  const SizedBox(height: 12),
+                                  if (_existingProject!.videos.isNotEmpty) ...[
+                                    ..._existingProject!.videos.map((v) => ListTile(
+                                      dense: true,
+                                      leading: const Icon(Icons.video_file, color: Colors.blue),
+                                      title: Text(v.title, overflow: TextOverflow.ellipsis),
+                                      trailing: const Icon(Icons.open_in_new, size: 18),
+                                      onTap: () => _openUrl(v.url),
+                                    )),
+                                  ],
+                                  if (_existingProject!.documents.isNotEmpty) ...[
+                                    ..._existingProject!.documents.map((d) => ListTile(
+                                      dense: true,
+                                      leading: const Icon(Icons.description, color: Colors.green),
+                                      title: Text(d.title, overflow: TextOverflow.ellipsis),
+                                      trailing: const Icon(Icons.open_in_new, size: 18),
+                                      onTap: () => _openUrl(d.url),
+                                    )),
+                                  ],
+                                ],
+
+                                const SizedBox(height: 32),
+                                const Text('Documentación (Videos, Código, PDF)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 12),
+                                if (_selectedFiles.isNotEmpty) ...[
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: _selectedFiles.length,
+                                    itemBuilder: (context, index) {
+                                      final file = _selectedFiles[index];
+                                      return ListTile(
+                                        dense: true,
+                                        leading: Icon(_getFileIcon(file.extension)),
+                                        title: Text(file.name, overflow: TextOverflow.ellipsis),
+                                        subtitle: Text('${(file.size / 1024 / 1024).toStringAsFixed(2)} MB'),
+                                        trailing: IconButton(
+                                          icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                          onPressed: () => _removeFile(index),
+                                        ),
+                                      );
                                     },
                                   ),
-                                  hintText: _assignments.isEmpty ? 'No hay tareas disponibles' : 'Selecciona una tarea',
+                                  const SizedBox(height: 8),
+                                ],
+                                if (_existingProject == null) ...[
+                                  OutlinedButton.icon(
+                                    onPressed: _pickFiles,
+                                    icon: const Icon(Icons.add_circle_outline),
+                                    label: const Text('Agregar archivos'),
+                                  ),
+                                ],
+                                const SizedBox(height: 40),
+                              ] else ...[
+                                const SizedBox(height: 100),
+                                Center(
+                                  child: Column(
+                                    children: [
+                                      Icon(Icons.assignment_outlined, size: 64, color: Colors.grey.shade300),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Selecciona una tarea arriba para comenzar tu entrega',
+                                        style: TextStyle(color: Colors.grey.shade500),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                items: _assignments.map((a) => DropdownMenuItem(
-                                  value: a.id,
-                                  child: Text(a.title, overflow: TextOverflow.ellipsis),
-                                )).toList(),
-                                onChanged: _assignments.isEmpty ? null : (val) => _onAssignmentChanged(val),
-                                validator: (val) {
-                                  if (val == null) return 'Por favor selecciona una tarea';
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                            ],
-
-                            // Details and Form Fields
-                            if (_selectedAssignmentId != null) ...[
-                              _buildAssignmentDetails(),
-                              const SizedBox(height: 24),
-                            ],
-
-                            TextFormField(
-                              controller: _titleController,
-                              readOnly: _existingProject != null,
-                              decoration: const InputDecoration(
-                                labelText: 'Título del Proyecto',
-                                prefixIcon: Icon(Icons.title),
-                              ),
-                              validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _teamNameController,
-                              readOnly: _existingProject != null,
-                              decoration: const InputDecoration(
-                                labelText: 'Nombre del Equipo',
-                                prefixIcon: Icon(Icons.group),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _categoryController,
-                              readOnly: _existingProject != null,
-                              decoration: const InputDecoration(
-                                labelText: 'Categoría',
-                                prefixIcon: Icon(Icons.category),
-                              ),
-                              validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _descriptionController,
-                              readOnly: _existingProject != null,
-                              maxLines: 5,
-                              decoration: const InputDecoration(
-                                labelText: 'Descripción detallada',
-                                alignLabelWithHint: true,
-                              ),
-                              validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _repoLinkController,
-                              readOnly: _existingProject != null,
-                              decoration: const InputDecoration(
-                                labelText: 'Link de Repositorio (GitHub, etc.)',
-                                prefixIcon: Icon(Icons.link),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _demoLinkController,
-                              readOnly: _existingProject != null,
-                              decoration: const InputDecoration(
-                                labelText: 'Link de Demo o Drive',
-                                prefixIcon: Icon(Icons.ondemand_video),
-                              ),
-                            ),
-
-                            // Files section
-                            if (_existingProject != null) ...[
-                              const SizedBox(height: 32),
-                              const Text('Archivos Entregados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              const SizedBox(height: 12),
-                              if (_existingProject!.videos.isNotEmpty) ...[
-                                ..._existingProject!.videos.map((v) => ListTile(
-                                  dense: true,
-                                  leading: const Icon(Icons.video_file, color: Colors.blue),
-                                  title: Text(v.title, overflow: TextOverflow.ellipsis),
-                                  trailing: const Icon(Icons.open_in_new, size: 18),
-                                  onTap: () => _openUrl(v.url),
-                                )),
-                              ],
-                              if (_existingProject!.documents.isNotEmpty) ...[
-                                ..._existingProject!.documents.map((d) => ListTile(
-                                  dense: true,
-                                  leading: const Icon(Icons.description, color: Colors.green),
-                                  title: Text(d.title, overflow: TextOverflow.ellipsis),
-                                  trailing: const Icon(Icons.open_in_new, size: 18),
-                                  onTap: () => _openUrl(d.url),
-                                )),
                               ],
                             ],
-
-                            const SizedBox(height: 32),
-                            const Text('Documentación (Videos, Código, PDF)', style: TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 12),
-                            if (_selectedFiles.isNotEmpty) ...[
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: _selectedFiles.length,
-                                itemBuilder: (context, index) {
-                                  final file = _selectedFiles[index];
-                                  return ListTile(
-                                    dense: true,
-                                    leading: Icon(_getFileIcon(file.extension)),
-                                    title: Text(file.name, overflow: TextOverflow.ellipsis),
-                                    subtitle: Text('${(file.size / 1024 / 1024).toStringAsFixed(2)} MB'),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                      onPressed: () => _removeFile(index),
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                            if (_existingProject == null) ...[
-                              OutlinedButton.icon(
-                                onPressed: _pickFiles,
-                                icon: const Icon(Icons.add_circle_outline),
-                                label: const Text('Agregar archivos'),
-                              ),
-                            ],
-
-                            const SizedBox(height: 48),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    // Bottom Button Section
+                    if (_selectedAssignmentId != null) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                             if (_existingProject == null)
                               ElevatedButton(
                                 onPressed: _isSubmitting ? null : _submitProject,
@@ -711,6 +736,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                                   backgroundColor: AppColors.primaryYellow,
                                   foregroundColor: AppColors.textPrimary,
                                   elevation: 2,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                                 child: _isSubmitting 
                                   ? const SizedBox(
@@ -729,15 +755,15 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   backgroundColor: Colors.red.shade400,
                                   foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                               ),
-                            const SizedBox(height: 24),
                           ],
                         ),
                       ),
-                    ),
-                  );
-                },
+                    ],
+                  ],
+                ),
               ),
             ),
     );
