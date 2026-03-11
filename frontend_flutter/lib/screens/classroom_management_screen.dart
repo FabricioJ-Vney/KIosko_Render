@@ -284,13 +284,13 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                   studentId: widget.userId,
                   status: 'Pending',
                 );
-                final success = await _apiService.enrollInClass(enrollment);
+                final result = await _apiService.enrollInClass(enrollment);
                 if (mounted) {
-                  if (success) {
+                  if (result == true) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Solicitud enviada correctamente')));
                     Navigator.pop(context);
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al enviar solicitud. Asegúrate de que no te hayas unido ya.'), backgroundColor: Colors.red));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $result'), backgroundColor: Colors.red));
                   }
                 }
               } else {

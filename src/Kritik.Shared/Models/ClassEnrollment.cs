@@ -16,5 +16,5 @@ public class ClassEnrollment
     public string? StudentName { get; set; }
     
     public string Status { get; set; } = "Pending"; // Pending, Accepted, Rejected
-    public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? RequestedAt { get; set; } = DateTime.UtcNow;
 }
