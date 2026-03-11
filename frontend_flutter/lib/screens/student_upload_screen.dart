@@ -337,10 +337,12 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   }
 
   Widget _buildAssignmentDetails() {
-    final assignment = _assignments.cast<Assignment?>().firstWhere(
-      (a) => a?.id == _selectedAssignmentId,
-      orElse: () => null,
-    );
+    final assignment = _assignments.isNotEmpty 
+        ? _assignments.cast<Assignment?>().firstWhere(
+            (a) => a?.id == _selectedAssignmentId,
+            orElse: () => null,
+          )
+        : null;
     
     if (assignment == null) return const SizedBox.shrink();
     
@@ -485,7 +487,34 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       ),
       body: (_isLoadingAssignments || _isLoadingDetails)
           ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
+          : (_errorMessage != null && _assignments.isEmpty)
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text('Ocurrió un error', style: Theme.of(context).textTheme.titleLarge),
+                        const SizedBox(height: 8),
+                        Text(_errorMessage!, textAlign: TextAlign.center),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _isLoadingAssignments = true;
+                              _errorMessage = null;
+                            });
+                            _fetchAssignments();
+                          },
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : SafeArea(
               child: Form(
                 key: _formKey,
                 child: ListView(
@@ -544,8 +573,13 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                           const SizedBox(width: 8),
                           SizedBox(
                             height: 56,
+                            width: 100, // Constrain width in Row to avoid infinite width crash
                             child: ElevatedButton(
                               onPressed: _isSearchingCode ? null : _searchByCode,
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(0, 56), // Override potential infinite width theme
+                                padding: EdgeInsets.zero,
+                              ),
                               child: _isSearchingCode 
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                                 : const Text('Buscar'),

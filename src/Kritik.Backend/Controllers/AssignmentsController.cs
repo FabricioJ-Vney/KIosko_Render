@@ -35,14 +35,15 @@ public class AssignmentsController : ControllerBase
             foreach (var classId in activeClassIds)
             {
                 var classroom = await _classroomService.GetAsync(classId);
-                if (classroom == null) continue;
+                if (classroom == null || string.IsNullOrEmpty(classroom.Id)) continue;
 
                 var classAssignments = await _assignmentService.GetByClassAsync(classId);
                 allAssignments.AddRange(classAssignments);
             }
 
-            // Deduplicate by ID and Title
+            // Deduplicate by ID and Title, and filter out empty titles
             return allAssignments
+                .Where(a => !string.IsNullOrEmpty(a.Title))
                 .GroupBy(a => a.Id)
                 .Select(g => g.First())
                 .GroupBy(a => a.Title)
@@ -62,8 +63,9 @@ public class AssignmentsController : ControllerBase
                 allAssignments.AddRange(classAssignments);
             }
             
-            // Deduplicate by ID and Title
+            // Deduplicate by ID and Title, and filter out empty titles
             return allAssignments
+                .Where(a => !string.IsNullOrEmpty(a.Title))
                 .GroupBy(a => a.Id)
                 .Select(g => g.First())
                 .GroupBy(a => a.Title)
@@ -72,7 +74,6 @@ public class AssignmentsController : ControllerBase
         }
         
         // Return empty list instead of ALL assignments if no filter is provided
-        // unless it's an admin context (which would use a different specific endpoint if needed)
         return new List<Assignment>();
     }
 
