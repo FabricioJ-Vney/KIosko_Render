@@ -67,7 +67,8 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 
-var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+var webRootPath = app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+var uploadsPath = Path.Combine(webRootPath, "uploads");
 if (!Directory.Exists(uploadsPath))
 {
     Directory.CreateDirectory(uploadsPath);
