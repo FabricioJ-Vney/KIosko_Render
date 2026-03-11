@@ -2,6 +2,7 @@ using Kritik.Backend.Settings;
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
 using Kritik.Backend.Services;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,8 +67,16 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 
+var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
 app.UseStaticFiles(new StaticFileOptions
 {
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads",
     ServeUnknownFileTypes = true,
     DefaultContentType = "application/octet-stream"
 }); // Enable static files for /uploads
