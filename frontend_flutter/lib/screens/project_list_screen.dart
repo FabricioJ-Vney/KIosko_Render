@@ -326,12 +326,12 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                           ],
                         ),
                         trailing: const Icon(Icons.chevron_right, color: AppColors.primaryYellow),
-                      onTap: (isSubmitted || isExpired) ? null : () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(
-                          studentId: widget.userId ?? '',
-                          initialAssignmentId: a.id,
-                        ))).then((_) => _fetchProjects());
-                      },
+                        onTap: (isExpired && !isSubmitted) ? null : () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(
+                            studentId: widget.userId ?? '',
+                            initialAssignmentId: a.id,
+                          ))).then((_) => _fetchProjects());
+                        },
                     ),
                   );
                 },

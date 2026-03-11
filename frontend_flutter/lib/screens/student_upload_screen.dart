@@ -35,6 +35,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
   Rubric? _assignmentRubric;
   Evaluation? _existingEvaluation;
+  Project? _existingProject;
   bool _isLoadingDetails = false;
   String? _errorMessage;
 
@@ -92,11 +93,19 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       );
 
       if (projects.isNotEmpty) {
-        final project = projects.first;
+        _existingProject = projects.first;
+        _titleController.text = _existingProject?.title ?? '';
+        _descriptionController.text = _existingProject?.description ?? '';
+        _categoryController.text = _existingProject?.category ?? '';
+        
         // 3. Fetch evaluation if exists
-        _existingEvaluation = await _apiService.getEvaluationByProjectId(project.id!);
+        _existingEvaluation = await _apiService.getEvaluationByProjectId(_existingProject!.id!);
       } else {
+        _existingProject = null;
         _existingEvaluation = null;
+        _titleController.clear();
+        _descriptionController.clear();
+        _categoryController.clear();
       }
 
     } catch (e) {
@@ -126,6 +135,44 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         );
       }
       setState(() => _isLoadingAssignments = false);
+    }
+  }
+
+  Future<void> _deleteSubmission() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Cancelar entrega?'),
+        content: const Text('Esto eliminará tu entrega actual y volverá a marcar la tarea como pendiente. Los archivos subidos no se eliminarán del servidor pero ya no estarán asociados a esta tarea.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No, mantener')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true), 
+            child: const Text('Sí, cancelar entrega', style: TextStyle(color: Colors.red))
+          ),
+        ],
+      )
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isSubmitting = true);
+    try {
+      final success = await _apiService.deleteProject(_existingProject!.id!);
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Entrega cancelada correctamente')));
+          Navigator.pop(context);
+        }
+      } else {
+        throw Exception('No se pudo eliminar el proyecto');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -379,90 +426,97 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Unete a una convocatoria usando el código que te dio tu docente o selecciona una de la lista.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _accessCodeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Código de Convocatoria',
-                        hintText: 'Ej: AB1234',
-                        prefixIcon: Icon(Icons.vpn_key),
+              if (_existingProject == null) ...[
+                Text(
+                  'Unete a una convocatoria usando el código que te dio tu docente o selecciona una de la lista.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+              if (_existingProject == null) ...[
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _accessCodeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Código de Convocatoria',
+                          hintText: 'Ej: AB1234',
+                          prefixIcon: Icon(Icons.vpn_key),
+                        ),
+                        textCapitalization: TextCapitalization.characters,
                       ),
-                      textCapitalization: TextCapitalization.characters,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isSearchingCode ? null : _searchByCode,
-                      child: _isSearchingCode 
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Buscar'),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isSearchingCode ? null : _searchByCode,
+                        child: _isSearchingCode 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Buscar'),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Divider(),
-              const SizedBox(height: 24),
-              _isLoadingAssignments
-                ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        value: _selectedAssignmentId,
-                        decoration: InputDecoration(
-                          labelText: 'Tarea / Convocatoria',
-                          prefixIcon: const Icon(Icons.assignment),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.refresh),
-                            onPressed: () {
-                              setState(() => _isLoadingAssignments = true);
-                              _fetchAssignments();
-                            },
+                  ],
+                ),
+                const SizedBox(height: 24),
+                const Divider(),
+              ],
+              if (_existingProject == null) ...[
+                const SizedBox(height: 24),
+                _isLoadingAssignments
+                  ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          value: _selectedAssignmentId,
+                          decoration: InputDecoration(
+                            labelText: 'Tarea / Convocatoria',
+                            prefixIcon: const Icon(Icons.assignment),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.refresh),
+                              onPressed: () {
+                                setState(() => _isLoadingAssignments = true);
+                                _fetchAssignments();
+                              },
+                            ),
+                            hintText: _assignments.isEmpty ? 'No hay tareas disponibles' : 'Selecciona una tarea',
                           ),
-                          hintText: _assignments.isEmpty ? 'No hay tareas disponibles' : 'Selecciona una tarea',
+                          items: _assignments.isNotEmpty 
+                            ? _assignments.map((a) => DropdownMenuItem(
+                                value: a.id,
+                                child: Text(a.title, overflow: TextOverflow.ellipsis),
+                              )).toList()
+                            : [],
+                          onChanged: _assignments.isEmpty ? null : (val) {
+                            if (_assignments.any((a) => a.id == val)) {
+                              _onAssignmentChanged(val);
+                            }
+                          },
+                          validator: (val) {
+                            if (val == null) return 'Por favor selecciona una tarea';
+                            if (!_assignments.any((a) => a.id == val)) return 'Tarea no válida';
+                            return null;
+                          },
                         ),
-                        items: _assignments.isNotEmpty 
-                          ? _assignments.map((a) => DropdownMenuItem(
-                              value: a.id,
-                              child: Text(a.title, overflow: TextOverflow.ellipsis),
-                            )).toList()
-                          : [],
-                        onChanged: _assignments.isEmpty ? null : (val) {
-                          if (_assignments.any((a) => a.id == val)) {
-                            _onAssignmentChanged(val);
-                          }
-                        },
-                        validator: (val) {
-                          if (val == null) return 'Por favor selecciona una tarea';
-                          if (!_assignments.any((a) => a.id == val)) return 'Tarea no válida';
-                          return null;
-                        },
-                      ),
-                      if (_selectedAssignmentId != null && !_isLoadingDetails) ...[
-                        const SizedBox(height: 16),
-                        _buildAssignmentDetails(),
                       ],
-                      if (_isLoadingDetails)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                    ],
-                  ),
+                    ),
+              ],
+              if (_selectedAssignmentId != null && !_isLoadingDetails) ...[
+                const SizedBox(height: 16),
+                _buildAssignmentDetails(),
+              ],
+              if (_isLoadingDetails)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
+                readOnly: _existingProject != null,
                 decoration: const InputDecoration(
                   labelText: 'Título de Proyecto / Tarea',
                   prefixIcon: Icon(Icons.title),
@@ -471,17 +525,18 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                initialValue: _categoryController.text,
+                controller: _categoryController,
+                readOnly: _existingProject != null,
                 decoration: const InputDecoration(
                   labelText: 'Categoría',
                   prefixIcon: Icon(Icons.category),
                 ),
-                onChanged: (v) => _categoryController.text = v,
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
+                readOnly: _existingProject != null,
                 maxLines: 5,
                 decoration: const InputDecoration(
                   labelText: 'Descripción detallada',
@@ -513,28 +568,53 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                 ),
                 const SizedBox(height: 8),
               ],
-              OutlinedButton.icon(
-                onPressed: _pickFiles,
-                icon: const Icon(Icons.add_circle_outline),
-                label: const Text('Agregar archivos'),
-              ),
-              const SizedBox(height: 48),
-              ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitProject,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppColors.primaryYellow,
-                  foregroundColor: AppColors.textPrimary,
-                  elevation: 2,
+              if (_existingProject == null) ...[
+                OutlinedButton.icon(
+                  onPressed: _pickFiles,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('Agregar archivos'),
                 ),
-                child: _isSubmitting 
-                  ? const SizedBox(
-                      height: 20, 
-                      width: 20, 
-                      child: CircularProgressIndicator(color: AppColors.textPrimary, strokeWidth: 2)
-                    )
-                  : const Text('Enviar Proyecto', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
+              ],
+              const SizedBox(height: 48),
+              if (_existingProject == null)
+                ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submitProject,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: AppColors.primaryYellow,
+                    foregroundColor: AppColors.textPrimary,
+                    elevation: 2,
+                  ),
+                  child: _isSubmitting 
+                    ? const SizedBox(
+                        height: 20, 
+                        width: 20, 
+                        child: CircularProgressIndicator(color: AppColors.textPrimary, strokeWidth: 2)
+                      )
+                    : const Text('Enviar Proyecto', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                )
+              else if (_existingEvaluation == null)
+                Column(
+                  children: [
+                    const Text(
+                      '¿Cometiste un error? Puedes cancelar esta entrega y volver a subirla mientras el docente no la haya calificado y la fecha límite no haya pasado.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _isSubmitting ? null : _deleteSubmission,
+                      icon: const Icon(Icons.cancel),
+                      label: const Text('Cancelar Entrega'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.red.shade400,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
