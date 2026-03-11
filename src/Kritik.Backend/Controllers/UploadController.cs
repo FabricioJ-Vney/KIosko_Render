@@ -24,8 +24,19 @@ public class UploadController : ControllerBase
         if (!Directory.Exists(uploadsPath))
             Directory.CreateDirectory(uploadsPath);
 
-        // Generate unique filename
-        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        // Generate unique filename and ensure extension exists
+        var ext = Path.GetExtension(file.FileName);
+        if (string.IsNullOrEmpty(ext))
+        {
+            var contentType = file.ContentType.ToLower();
+            if (contentType.Contains("video/mp4")) ext = ".mp4";
+            else if (contentType.Contains("video/quicktime")) ext = ".mov";
+            else if (contentType.Contains("video")) ext = ".mp4";
+            else if (contentType.Contains("image/jpeg")) ext = ".jpg";
+            else if (contentType.Contains("image/png")) ext = ".png";
+            else if (contentType.Contains("pdf")) ext = ".pdf";
+        }
+        var fileName = $"{Guid.NewGuid()}{ext}";
         var filePath = Path.Combine(uploadsPath, fileName);
 
         using (var stream = new FileStream(filePath, FileMode.Create))
