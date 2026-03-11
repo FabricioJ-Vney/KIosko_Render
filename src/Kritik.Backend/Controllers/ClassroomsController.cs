@@ -84,7 +84,7 @@ public class ClassroomsController : ControllerBase
     [HttpPost("enroll")]
     public async Task<IActionResult> Enroll(ClassEnrollment enrollment)
     {
-        _logger.LogInformation("Enrollment attempt: Student={StudentId}, Classroom={ClassroomId}", enrollment.StudentId, enrollment.ClassroomId);
+        _logger.LogInformation("Enrollment attempt JSON: {Json}", System.Text.Json.JsonSerializer.Serialize(enrollment));
 
         if (string.IsNullOrEmpty(enrollment.StudentId))
             return BadRequest("StudentId is required.");

@@ -286,11 +286,14 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                 );
                 final result = await _apiService.enrollInClass(enrollment);
                 if (mounted) {
-                  if (result == true) {
+                  if (result is bool && result == true) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Solicitud enviada correctamente')));
                     Navigator.pop(context);
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $result'), backgroundColor: Colors.red));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Error: $result'), 
+                      backgroundColor: Colors.red
+                    ));
                   }
                 }
               } else {

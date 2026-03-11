@@ -464,10 +464,13 @@ class ApiService {
       final response = await _dio.post('Classrooms/enroll', data: enrollment.toJson());
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      debugPrint('Enroll error: $e');
       if (e is DioException) {
-        return e.response?.data?.toString() ?? e.message;
+        final errorData = e.response?.data;
+        debugPrint('Enroll error detailed: ${e.message}');
+        debugPrint('Enroll error response body: $errorData');
+        return errorData?.toString() ?? e.message;
       }
+      debugPrint('Enroll error unknown: $e');
       return e.toString();
     }
   }

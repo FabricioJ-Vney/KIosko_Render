@@ -379,21 +379,29 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           ElevatedButton(
             onPressed: () async {
               if (codeController.text.isEmpty) return;
+              
+              if (widget.userId == null || widget.userId!.isEmpty) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Debes iniciar sesión para unirte a una clase.'))
+                  );
+                }
+                return;
+              }
+
               final classroom = await _apiService.getClassroomByCode(codeController.text);
               if (classroom != null) {
                 final enrollment = ClassEnrollment(
                   classroomId: classroom.id!,
-                  studentId: widget.userId ?? '',
+                  studentId: widget.userId!,
                   status: 'Pending',
                 );
                 final result = await _apiService.enrollInClass(enrollment);
                 if (mounted) {
-                  if (result == true) {
+                  if (result is bool && result == true) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Solicitud enviada al profesor')));
                     Navigator.pop(context);
-                    if (widget.userId != null) {
-                      _fetchProjects(); 
-                    }
+                    _fetchProjects(); 
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text('Error: $result'), 
