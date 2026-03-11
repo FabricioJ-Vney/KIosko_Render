@@ -11,12 +11,14 @@ public class ClassroomsController : ControllerBase
     private readonly ClassroomService _classroomService;
     private readonly EnrollmentService _enrollmentService;
     private readonly UserService _userService;
+    private readonly ILogger<ClassroomsController> _logger;
 
-    public ClassroomsController(ClassroomService classroomService, EnrollmentService enrollmentService, UserService userService)
+    public ClassroomsController(ClassroomService classroomService, EnrollmentService enrollmentService, UserService userService, ILogger<ClassroomsController> logger)
     {
         _classroomService = classroomService;
         _enrollmentService = enrollmentService;
         _userService = userService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -82,6 +84,8 @@ public class ClassroomsController : ControllerBase
     [HttpPost("enroll")]
     public async Task<IActionResult> Enroll(ClassEnrollment enrollment)
     {
+        _logger.LogInformation("Enrollment attempt: Student={StudentId}, Classroom={ClassroomId}", enrollment.StudentId, enrollment.ClassroomId);
+
         if (string.IsNullOrEmpty(enrollment.StudentId))
             return BadRequest("StudentId is required.");
 
@@ -127,8 +131,15 @@ public class ClassroomsController : ControllerBase
         {
             if (!string.IsNullOrEmpty(enrollment.StudentId))
             {
+                // Try to find user by ID first
                 var user = await _userService.GetAsync(enrollment.StudentId);
-                // Fallback to name if ID is an email or name is missing
+                
+                // If not found, try by Email (the StudentId field might contain an email if user is partially registered or legacy)
+                if (user == null && enrollment.StudentId.Contains("@"))
+                {
+                    user = await _userService.GetByEmailAsync(enrollment.StudentId);
+                }
+
                 enrollment.StudentName = user?.FullName ?? enrollment.StudentId;
             }
         }

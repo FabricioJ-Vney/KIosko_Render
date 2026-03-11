@@ -269,6 +269,14 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
+              if (widget.userId == null || widget.userId!.isEmpty) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Acceso de Invitado: Debes iniciar sesión para unirte a una clase.'))
+                  );
+                }
+                return;
+              }
               final classroom = await _apiService.getClassroomByCode(codeController.text);
               if (classroom != null) {
                 final enrollment = ClassEnrollment(
@@ -314,8 +322,13 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
         if (widget.role.toLowerCase() == 'student') _apiService.getProjects(studentId: widget.userId ?? '') else Future.value(<Project>[]),
       ]).then((results) {
         if (mounted) {
+          final fetchedMembers = List<ClassEnrollment>.from(results[0]);
+          debugPrint('DEBUG: Loaded ${fetchedMembers.length} members/requests for this classroom');
+          for (var m in fetchedMembers) {
+            debugPrint('DEBUG: Request from StudentID: ${m.studentId}, Name: ${m.studentName}, Status: ${m.status}');
+          }
           setState(() {
-            members = List<ClassEnrollment>.from(results[0]);
+            members = fetchedMembers;
             assignments = List<Assignment>.from(results[1]);
             studentProjects = List<Project>.from(results[2]);
             loadingDetails = false;
