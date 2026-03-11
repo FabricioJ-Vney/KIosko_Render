@@ -72,9 +72,9 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           _apiService.getClassrooms(studentId: userId),
         ]);
         
-        final projects = results[0] as List<Project>;
-        final assignments = results[1] as List<Assignment>;
-        final classrooms = results[2] as List<Classroom>;
+        final projects = List<Project>.from(results[0]);
+        final assignments = List<Assignment>.from(results[1]);
+        final classrooms = List<Classroom>.from(results[2]);
         
         final submittedAssignmentIds = projects.map((p) => p.assignmentId).toSet();
         final pending = assignments.where((a) {
