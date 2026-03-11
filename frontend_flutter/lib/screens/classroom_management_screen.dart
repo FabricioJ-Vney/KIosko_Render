@@ -299,28 +299,40 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
     List<Assignment> assignments = [];
     List<Project> studentProjects = [];
     bool loadingDetails = true;
-    String filter = 'Todos';
+    void loadData(Function setState) {
+      debugPrint('DEBUG: Calling loadData for classroom: ${classroom.id}');
+      setState(() => loadingDetails = true);
+      Future.wait([
+        _apiService.getClassMembers(classroom.id ?? ''),
+        _apiService.getAssignmentsByClassroom(classroom.id ?? ''),
+        if (widget.role.toLowerCase() == 'student') _apiService.getProjects(studentId: widget.userId ?? '') else Future.value([] as List<Project>),
+      ]).then((results) {
+        if (mounted) {
+          setState(() {
+            members = results[0] as List<ClassEnrollment>;
+            assignments = results[1] as List<Assignment>;
+            studentProjects = results[2] as List<Project>;
+            loadingDetails = false;
+          });
+          debugPrint('DEBUG: Loaded ${assignments.length} assignments for this classroom');
+        }
+      }).catchError((e) {
+        debugPrint('DEBUG: Error in loadData: $e');
+        if (mounted) {
+          setState(() => loadingDetails = false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
+      });
+    }
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
           if (loadingDetails) {
-            Future.wait([
-              _apiService.getClassMembers(classroom.id ?? ''),
-              _apiService.getAssignments(studentId: widget.role.toLowerCase() == 'student' ? widget.userId : null),
-              if (widget.role.toLowerCase() == 'student') _apiService.getProjects(studentId: widget.userId ?? '') else Future.value([] as List<Project>),
-            ]).then((results) {
-              if (mounted) {
-                setModalState(() {
-                  members = results[0] as List<ClassEnrollment>;
-                  assignments = (results[1] as List<Assignment>).where((a) => a.classroomId == classroom.id).toList();
-                  studentProjects = results[2] as List<Project>;
-                  loadingDetails = false;
-                });
-              }
-            });
+            loadData(setModalState);
             return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
           }
 
@@ -334,7 +346,13 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                 AppBar(
                   title: Text(classroom.name),
                   automaticallyImplyLeading: false,
-                  actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))],
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: () => loadData(setModalState),
+                    ),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  ],
                 ),
                 Expanded(
                   child: ListView(
@@ -342,9 +360,15 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                     padding: const EdgeInsets.all(16),
                     children: [
                       Text('Descripción:', style: Theme.of(context).textTheme.titleSmall),
-                      Text(classroom.description),
+                      Text(classroom.description, style: const TextStyle(color: Colors.grey)),
                       const SizedBox(height: 16),
-                      if (widget.role.toLowerCase() == 'evaluator')
+                      if (widget.role.toLowerCase() == 'evaluator') ...[
+                        Text('Código de Clase (para alumnos):', style: Theme.of(context).textTheme.titleSmall),
+                        SelectableText(
+                          classroom.accessCode, 
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 4, color: AppColors.primaryYellow)
+                        ),
+                        const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () => Navigator.push(
                             context,
@@ -354,7 +378,7 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                                 initialClassroomId: classroom.id,
                               ),
                             ),
-                          ),
+                          ).then((_) => loadData(setModalState)),
                           icon: const Icon(Icons.add_task),
                           label: const Text('Nueva Tarea'),
                           style: ElevatedButton.styleFrom(
@@ -362,30 +386,22 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                             minimumSize: const Size(double.infinity, 44),
                           ),
                         ),
+                      ],
                       const Divider(height: 32),
                       
                       if (widget.role.toLowerCase() == 'evaluator') ...[
-                         Text('Alumnos / Solicitudes:', style: Theme.of(context).textTheme.titleSmall),
-                        if (members.isEmpty) const Text('No hay alumnos registrados.'),
-                        ...members.map((m) => ListTile(
-                          title: Text('ID Alumno: ${m.studentId}'),
-                          subtitle: Text('Estado: ${m.status}'),
-                          trailing: m.status == 'Pending' ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(icon: const Icon(Icons.check, color: Colors.green), onPressed: () async {
-                                await _apiService.updateEnrollmentStatus(m.id!, 'Accepted');
-                                setModalState(() => loadingDetails = true);
-                              }),
-                              IconButton(icon: const Icon(Icons.close, color: Colors.red), onPressed: () async {
-                                await _apiService.updateEnrollmentStatus(m.id!, 'Rejected');
-                                setModalState(() => loadingDetails = true);
-                              }),
-                            ],
-                          ) : null,
-                        )),
-                        const Divider(height: 32),
-                        Text('Tareas en esta Clase:', style: Theme.of(context).textTheme.titleSmall),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Tareas en esta Clase:', style: Theme.of(context).textTheme.titleSmall),
+                            IconButton(
+                              icon: const Icon(Icons.refresh, size: 20),
+                              onPressed: () => loadData(setModalState),
+                              tooltip: 'Refrescar tareas',
+                            ),
+                          ],
+                        ),
+                        if (assignments.isEmpty) const Text('No hay tareas.'),
                         if (assignments.isEmpty) const Text('No hay tareas.'),
                         ...assignments.map((a) => ListTile(
                           title: Text(a.title),

@@ -20,14 +20,15 @@ class Assignment {
   });
 
   factory Assignment.fromJson(Map<String, dynamic> json) => Assignment(
-    id: json['id']?.toString() ?? json['_id']?.toString(),
-    title: json['title'] as String? ?? 'Sin Título',
-    description: json['description'] as String? ?? '',
-    teacherId: json['teacherId'] as String? ?? '',
-    rubricId: json['rubricId'] as String?,
-    dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
-    accessCode: json['accessCode'] as String?,
-    classroomId: json['classroomId'] as String?,
+    id: json['id']?.toString() ?? json['_id']?.toString() ?? json['Id']?.toString(),
+    title: json['title']?.toString() ?? json['Title']?.toString() ?? 'Sin Título',
+    description: json['description']?.toString() ?? json['Description']?.toString() ?? '',
+    teacherId: json['teacherId']?.toString() ?? json['TeacherId']?.toString() ?? '',
+    rubricId: json['rubricId']?.toString() ?? json['RubricId']?.toString(),
+    dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate'].toString()) : 
+             (json['DueDate'] != null ? DateTime.parse(json['DueDate'].toString()) : null),
+    accessCode: json['accessCode']?.toString() ?? json['AccessCode']?.toString(),
+    classroomId: json['classroomId']?.toString() ?? json['ClassroomId']?.toString(),
   );
 
   Map<String, dynamic> toJson() => {

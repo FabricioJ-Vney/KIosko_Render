@@ -247,16 +247,35 @@ class ApiService {
   // Assignments
   Future<List<Assignment>> getAssignments({String? teacherId, String? studentId}) async {
     try {
+      debugPrint('DEBUG: Calling getAssignments with teacherId: $teacherId, studentId: $studentId');
       final response = await _dio.get('Assignments', queryParameters: {
         if (teacherId != null) 'teacherId': teacherId,
         if (studentId != null) 'studentId': studentId,
       });
       if (response.statusCode == 200) {
-        return (response.data as List).map((x) => Assignment.fromJson(x)).toList();
+        final List<dynamic> data = response.data;
+        debugPrint('DEBUG: getAssignments returned ${data.length} items');
+        return data.map((json) => Assignment.fromJson(json)).toList();
       }
       return [];
     } catch (e) {
       debugPrint('Get assignments error: $e');
+      return [];
+    }
+  }
+
+  Future<List<Assignment>> getAssignmentsByClassroom(String classroomId) async {
+    try {
+      debugPrint('DEBUG: Fetching assignments for classroom: "$classroomId"');
+      final response = await _dio.get('Assignments/classroom/$classroomId');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        debugPrint('DEBUG: Found ${data.length} assignments for classroom $classroomId');
+        return data.map((json) => Assignment.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('DEBUG: Error in getAssignmentsByClassroom: $e');
       return [];
     }
   }
@@ -338,6 +357,19 @@ class ApiService {
     } catch (e) {
       debugPrint('Update profile error: $e');
       return false;
+    }
+  }
+
+  Future<Classroom?> getClassroomById(String id) async {
+    try {
+      final response = await _dio.get('Classrooms/$id');
+      if (response.statusCode == 200) {
+        return Classroom.fromJson(response.data);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Get classroom by id error: $e');
+      return null;
     }
   }
 

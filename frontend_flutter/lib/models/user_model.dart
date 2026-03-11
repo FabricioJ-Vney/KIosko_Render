@@ -11,14 +11,14 @@ class User {
   User({this.id, this.email, this.password, this.fullName, this.role, this.telefono, this.bio, this.fotoPerfil});
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-        id: json['id'],
-        email: json['email'],
-        password: json['password'],
-        role: json['role'],
-        fullName: json['fullName'],
-        telefono: json['telefono'],
-        bio: json['bio'],
-        fotoPerfil: json['fotoPerfil'],
+        id: json['id']?.toString() ?? json['Id']?.toString() ?? json['_id']?.toString(),
+        email: json['email'] ?? json['Email'],
+        password: json['password'] ?? json['Password'],
+        role: json['role'] ?? json['Role'],
+        fullName: json['fullName'] ?? json['FullName'],
+        telefono: json['telefono'] ?? json['Telefono'],
+        bio: json['bio'] ?? json['Bio'],
+        fotoPerfil: json['fotoPerfil'] ?? json['FotoPerfil'] ?? json['foto_perfil'],
       );
 
   Map<String, dynamic> toJson() => {

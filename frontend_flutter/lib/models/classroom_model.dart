@@ -16,12 +16,13 @@ class Classroom {
   });
 
   factory Classroom.fromJson(Map<String, dynamic> json) => Classroom(
-        id: json['id']?.toString() ?? json['_id']?.toString(),
-        name: json['name'] ?? '',
-        description: json['description'] ?? '',
-        teacherId: json['teacherId'] ?? '',
-        accessCode: json['accessCode'] ?? '',
-        createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+        id: json['id']?.toString() ?? json['_id']?.toString() ?? json['Id']?.toString(),
+        name: json['name'] ?? json['Name'] ?? '',
+        description: json['description'] ?? json['Description'] ?? '',
+        teacherId: json['teacherId']?.toString() ?? json['TeacherId']?.toString() ?? '',
+        accessCode: json['accessCode'] ?? json['AccessCode'] ?? '',
+        createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : 
+                  (json['CreatedAt'] != null ? DateTime.parse(json['CreatedAt'].toString()) : null),
       );
 
   Map<String, dynamic> toJson() {

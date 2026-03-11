@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/project_model.dart';
 import '../theme/app_theme.dart';
 
 import '../services/api_service.dart';
@@ -27,6 +29,8 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   List<Rubric> _rubrics = [];
   Rubric? _selectedRubric;
   Map<String, int> _detailedScores = {};
+  Project? _project;
+  bool _isLoadingProject = false;
   
   String? _evidencePath;
   bool _isSubmitting = false;
@@ -35,6 +39,40 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   void initState() {
     super.initState();
     _loadRubrics();
+    _loadProjectDetails();
+  }
+
+  Future<void> _loadProjectDetails() async {
+    if (widget.projectId == null) return;
+    setState(() => _isLoadingProject = true);
+    try {
+      final projects = await _apiService.getProjects();
+      if (mounted) {
+        setState(() {
+          _project = projects.firstWhere((p) => p.id == widget.projectId);
+          _isLoadingProject = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading project details: $e');
+      if (mounted) setState(() => _isLoadingProject = false);
+    }
+  }
+
+  Future<void> _openFileExternally(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo abrir el archivo. Intenta copiar el enlace.')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+    }
   }
 
   Future<void> _loadRubrics() async {
@@ -144,6 +182,51 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(widget.projectName, style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 16),
+                  
+                  if (_isLoadingProject)
+                    const LinearProgressIndicator()
+                  else if (_project != null && _project!.coverImageUrl != null) ...[
+                    const Text('Archivo entregado por el alumno:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(_getFileIcon(_project!.coverImageUrl), color: Colors.blue),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _project!.coverImageUrl!.split('/').last,
+                                  style: const TextStyle(fontWeight: FontWeight.w500),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            onPressed: () => _openFileExternally(_project!.coverImageUrl!),
+                            icon: const Icon(Icons.open_in_new, size: 18),
+                            label: const Text('Abrir con App Local (Fotos/Galería/Video)'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade600,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 40),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   
                   // Rubric Selection
@@ -265,5 +348,20 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  IconData _getFileIcon(String? url) {
+    if (url == null) return Icons.insert_drive_file;
+    final ext = url.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf': return Icons.picture_as_pdf;
+      case 'mp4':
+      case 'mov':
+      case 'avi': return Icons.video_file;
+      case 'jpg':
+      case 'jpeg':
+      case 'png': return Icons.image;
+      default: return Icons.insert_drive_file;
+    }
   }
 }

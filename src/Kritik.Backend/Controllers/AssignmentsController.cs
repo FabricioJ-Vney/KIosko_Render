@@ -45,6 +45,12 @@ public class AssignmentsController : ControllerBase
         return new List<Assignment>();
     }
 
+    [HttpGet("classroom/{classroomId}")]
+    public async Task<List<Assignment>> GetByClassroom(string classroomId)
+    {
+        return await _assignmentService.GetByClassAsync(classroomId);
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<Assignment>> GetById(string id)
     {
