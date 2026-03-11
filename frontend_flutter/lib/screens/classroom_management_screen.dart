@@ -443,6 +443,41 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                             ],
                           ),
                         )),
+                        const Divider(height: 32),
+                        const Text('Miembros / Solicitudes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        if (members.isEmpty) const Text('No hay solicitudes de alumnos.'),
+                        ...members.map((m) => ListTile(
+                          leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                          title: Text(m.studentId),
+                          subtitle: Text('Estado: ${m.status}'),
+                          trailing: m.status == 'Pending' 
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.check, color: Colors.green),
+                                    onPressed: () async {
+                                      final success = await _apiService.updateEnrollmentStatus(m.id!, 'Accepted');
+                                      if (success) loadData(setModalState);
+                                    },
+                                    tooltip: 'Aceptar',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, color: Colors.red),
+                                    onPressed: () async {
+                                      final success = await _apiService.updateEnrollmentStatus(m.id!, 'Rejected');
+                                      if (success) loadData(setModalState);
+                                    },
+                                    tooltip: 'Rechazar',
+                                  ),
+                                ],
+                              )
+                            : Icon(
+                                m.status == 'Accepted' ? Icons.check_circle : Icons.cancel,
+                                color: m.status == 'Accepted' ? Colors.green : Colors.red,
+                              ),
+                        )),
                       ] else ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
