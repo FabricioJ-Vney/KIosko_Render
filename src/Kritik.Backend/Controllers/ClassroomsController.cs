@@ -26,7 +26,6 @@ public class ClassroomsController : ControllerBase
         {
             var enrollments = await _enrollmentService.GetByStudentAsync(studentId);
             var activeClassIds = enrollments
-                .Where(e => e.Status == "Accepted")
                 .Select(e => e.ClassroomId)
                 .ToList();
             

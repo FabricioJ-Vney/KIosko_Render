@@ -36,6 +36,7 @@ class ProjectListScreen extends StatefulWidget {
 class _ProjectListScreenState extends State<ProjectListScreen> {
   final ApiService _apiService = ApiService();
   List<Project> _allProjects = [];
+  List<Assignment> _allAssignmentsForStudent = [];
   List<Assignment> _pendingAssignments = [];
   List<Classroom> _studentClasses = [];
   bool _isLoading = true;
@@ -85,6 +86,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
         setState(() {
           _allProjects = projects;
+          _allAssignmentsForStudent = assignments;
           _pendingAssignments = pending;
           _studentClasses = classrooms;
           _isLoading = false;
@@ -217,10 +219,14 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       );
     }
 
-    final assignmentsToShow = _pendingAssignments.where((a) {
-      if (_studentStatusFilter == 'Pendientes') return true; // Already filtered in fetch
-      // We need all assignments to filter by 'Entregados' or 'Vencidos' on home
-      return true; 
+    final assignmentsToShow = _allAssignmentsForStudent.where((a) {
+      final isSubmitted = _allProjects.any((p) => p.assignmentId == a.id);
+      final isExpired = a.dueDate != null && a.dueDate!.isBefore(DateTime.now());
+      
+      if (_studentStatusFilter == 'Entregados') return isSubmitted;
+      if (_studentStatusFilter == 'Vencidos') return isExpired && !isSubmitted;
+      if (_studentStatusFilter == 'Pendientes') return !isSubmitted && !isExpired;
+      return true;
     }).toList();
 
     return Column(
@@ -259,7 +265,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         Expanded(
           child: _isLoading && _pendingAssignments.isEmpty
             ? const Center(child: CircularProgressIndicator())
-            : _pendingAssignments.isEmpty
+            : assignmentsToShow.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -276,9 +282,9 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: _pendingAssignments.length,
+                  itemCount: assignmentsToShow.length,
                   itemBuilder: (context, index) {
-                    final a = _pendingAssignments[index];
+                    final a = assignmentsToShow[index];
                     // Filtering is now handled in _fetchProjects for consistency
                     final isSubmitted = _allProjects.any((p) => p.assignmentId == a.id);
                     final isExpired = a.dueDate != null && a.dueDate!.isBefore(DateTime.now());
