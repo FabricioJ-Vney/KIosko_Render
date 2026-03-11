@@ -10,10 +10,10 @@ public class Project
     public string? Id { get; set; }
 
     public string? Title { get; set; }
-    public string TeamName { get; set; } = null!;
-    public string Category { get; set; } = null!;
-    public List<string> Technologies { get; set; } = new();
-    public string Description { get; set; } = null!;
+    public string? TeamName { get; set; }
+    public string? Category { get; set; }
+    public List<string>? Technologies { get; set; } = new();
+    public string? Description { get; set; }
     public List<string>? Members { get; set; } = new();
     public string? FairLocation { get; set; }
     public string? Status { get; set; }
@@ -24,7 +24,7 @@ public class Project
 
     public List<Video> Videos { get; set; } = new();
     public List<Document> Documents { get; set; } = new();
-    public string ImageUrl { get; set; } = "https://via.placeholder.com/150";
+    public string? ImageUrl { get; set; } = "https://via.placeholder.com/150";
     public string? CoverImageUrl { get; set; }
     public string? IconUrl { get; set; }
 }
