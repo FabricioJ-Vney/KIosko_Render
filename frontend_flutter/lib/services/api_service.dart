@@ -336,6 +336,16 @@ class ApiService {
     }
   }
 
+  Future<bool> deleteProject(String id) async {
+    try {
+      final response = await _dio.delete('Projects/$id');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('Delete project error: $e');
+      return false;
+    }
+  }
+
   // User Profile
   Future<User?> getUserProfile(String id) async {
     try {
