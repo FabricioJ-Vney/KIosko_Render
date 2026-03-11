@@ -14,11 +14,12 @@ class ClassEnrollment {
   });
 
   factory ClassEnrollment.fromJson(Map<String, dynamic> json) => ClassEnrollment(
-        id: json['id']?.toString() ?? json['_id']?.toString(),
-        classroomId: json['classroomId'] ?? '',
-        studentId: json['studentId'] ?? '',
-        status: json['status'] ?? 'Pending',
-        requestedAt: json['requestedAt'] != null ? DateTime.parse(json['requestedAt']) : null,
+        id: json['id']?.toString() ?? json['_id']?.toString() ?? json['Id']?.toString(),
+        classroomId: json['classroomId']?.toString() ?? json['ClassroomId']?.toString() ?? '',
+        studentId: json['studentId']?.toString() ?? json['StudentId']?.toString() ?? '',
+        status: json['status']?.toString() ?? json['Status']?.toString() ?? 'Pending',
+        requestedAt: json['requestedAt'] != null ? DateTime.tryParse(json['requestedAt'].toString()) : 
+                     (json['RequestedAt'] != null ? DateTime.tryParse(json['RequestedAt'].toString()) : null),
       );
 
   Map<String, dynamic> toJson() => {
