@@ -337,12 +337,10 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   }
 
   Widget _buildAssignmentDetails() {
-    final assignment = _assignments.isNotEmpty 
-        ? _assignments.cast<Assignment?>().firstWhere(
-            (a) => a?.id == _selectedAssignmentId,
-            orElse: () => null,
-          )
-        : null;
+    final assignment = _assignments.cast<Assignment?>().firstWhere(
+      (a) => a?.id == _selectedAssignmentId,
+      orElse: () => null,
+    );
     
     if (assignment == null) return const SizedBox.shrink();
     
@@ -573,13 +571,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                           const SizedBox(width: 8),
                           SizedBox(
                             height: 56,
-                            width: 100, // Constrain width in Row to avoid infinite width crash
                             child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(minimumSize: const Size(100, 56)),
                               onPressed: _isSearchingCode ? null : _searchByCode,
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(0, 56), // Override potential infinite width theme
-                                padding: EdgeInsets.zero,
-                              ),
                               child: _isSearchingCode 
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                                 : const Text('Buscar'),
