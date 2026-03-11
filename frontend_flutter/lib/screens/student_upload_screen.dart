@@ -20,8 +20,11 @@ class StudentUploadScreen extends StatefulWidget {
 class _StudentUploadScreenState extends State<StudentUploadScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
+  final _teamNameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _categoryController = TextEditingController();
+  final _repoLinkController = TextEditingController();
+  final _demoLinkController = TextEditingController();
   final _accessCodeController = TextEditingController();
   final ApiService _apiService = ApiService();
   
@@ -95,8 +98,17 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       if (projects.isNotEmpty) {
         _existingProject = projects.first;
         _titleController.text = _existingProject?.title ?? '';
+        _teamNameController.text = _existingProject?.teamName ?? '';
         _descriptionController.text = _existingProject?.description ?? '';
         _categoryController.text = _existingProject?.category ?? '';
+        
+        // Populate links if stored in technologies list (common pattern)
+        if (_existingProject!.technologies.isNotEmpty) {
+          _repoLinkController.text = _existingProject!.technologies.first;
+          if (_existingProject!.technologies.length > 1) {
+            _demoLinkController.text = _existingProject!.technologies[1];
+          }
+        }
         
         // 3. Fetch evaluation if exists
         _existingEvaluation = await _apiService.getEvaluationByProjectId(_existingProject!.id!);
@@ -104,8 +116,11 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         _existingProject = null;
         _existingEvaluation = null;
         _titleController.clear();
+        _teamNameController.clear();
         _descriptionController.clear();
         _categoryController.clear();
+        _repoLinkController.clear();
+        _demoLinkController.clear();
       }
 
     } catch (e) {
@@ -249,18 +264,40 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         }
       }
 
+      // 2. Create project with file URLs and teacher link
+      List<Video> videos = [];
+      List<Document> documents = [];
+      
+      for (int i = 0; i < _selectedFiles.length; i++) {
+        final file = _selectedFiles[i];
+        final url = i < uploadedFileUrls.length ? uploadedFileUrls[i] : null;
+        if (url == null) continue;
+
+        final ext = file.extension?.toLowerCase() ?? '';
+        if (ext == 'mp4' || ext == 'mov' || ext == 'avi') {
+          videos.add(Video(title: file.name, url: url, description: 'Video subido'));
+        } else {
+          documents.add(Document(title: file.name, url: url, type: ext.toUpperCase()));
+        }
+      }
+
       final selectedAssignment = _assignments.firstWhere((a) => a.id == _selectedAssignmentId);
 
-      // 2. Create project with file URLs and teacher link
       final newProject = Project(
         title: _titleController.text,
-        teamName: "Equipo de ${_titleController.text}",
+        teamName: _teamNameController.text.isNotEmpty ? _teamNameController.text : "Equipo de ${_titleController.text}",
         category: _categoryController.text,
         description: _descriptionController.text,
+        technologies: [
+          if (_repoLinkController.text.isNotEmpty) _repoLinkController.text,
+          if (_demoLinkController.text.isNotEmpty) _demoLinkController.text,
+        ],
         studentId: widget.studentId,
         assignmentId: _selectedAssignmentId,
         assignedTeacherId: selectedAssignment.teacherId,
         coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : null,
+        videos: videos,
+        documents: documents,
       );
 
       final response = await _apiService.createProjectsBatch([newProject]);
@@ -462,6 +499,30 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                 ),
                 const SizedBox(height: 24),
                 const Divider(),
+              ] else if (_existingProject != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.shade100),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('¡Tarea Entregada!', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                            Text('Has enviado este proyecto correctamente.', style: TextStyle(fontSize: 12, color: Colors.green.shade700)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
               if (_existingProject == null) ...[
                 const SizedBox(height: 24),
@@ -471,7 +532,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         DropdownButtonFormField<String>(
-                          value: _selectedAssignmentId,
+                          value: _assignments.any((a) => a.id == _selectedAssignmentId) ? _selectedAssignmentId : null,
                           decoration: InputDecoration(
                             labelText: 'Tarea / Convocatoria',
                             prefixIcon: const Icon(Icons.assignment),
@@ -525,6 +586,15 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                controller: _teamNameController,
+                readOnly: _existingProject != null,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre del Equipo',
+                  prefixIcon: Icon(Icons.group),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
                 controller: _categoryController,
                 readOnly: _existingProject != null,
                 decoration: const InputDecoration(
@@ -543,6 +613,24 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                   alignLabelWithHint: true,
                 ),
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _repoLinkController,
+                readOnly: _existingProject != null,
+                decoration: const InputDecoration(
+                  labelText: 'Link de Repositorio (GitHub, GitLab, etc.)',
+                  prefixIcon: Icon(Icons.link),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _demoLinkController,
+                readOnly: _existingProject != null,
+                decoration: const InputDecoration(
+                  labelText: 'Link de Demo o Drive',
+                  prefixIcon: Icon(Icons.ondemand_video),
+                ),
               ),
               const SizedBox(height: 32),
               const Text('Documentación (Videos, Código, PDF, Imágenes)', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -638,6 +726,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       case 'jpg':
       case 'jpeg':
       case 'png': return Icons.image;
+      case 'sql': return Icons.storage;
+      case 'ppt':
+      case 'pptx': return Icons.slideshow;
       default: return Icons.insert_drive_file;
     }
   }
