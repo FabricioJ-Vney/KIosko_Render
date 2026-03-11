@@ -7,6 +7,7 @@ import '../models/assignment_model.dart';
 import '../models/rubric_model.dart';
 import '../models/evaluation_model.dart';
 import '../theme/app_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class StudentUploadScreen extends StatefulWidget {
   final String studentId;
@@ -464,12 +465,14 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         title: const Text('Subir Mi Proyecto'),
         elevation: 0,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Form(
-          key: _formKey,
-          child: Column(
+      body: _isLoadingAssignments || _isLoadingDetails
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Form(
+                  key: _formKey,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (_existingProject == null) ...[
@@ -760,8 +763,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _openUrl(String? url) async {
     if (url == null || url.isEmpty) return;
