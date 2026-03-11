@@ -25,12 +25,15 @@ class ClassEnrollment {
                      (json['RequestedAt'] != null ? DateTime.tryParse(json['RequestedAt'].toString()) : null),
       );
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'classroomId': classroomId,
-        'studentId': studentId,
-        'studentName': studentName,
-        'status': status,
-        'requestedAt': requestedAt?.toIso8601String(),
-      };
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{
+      'classroomId': classroomId,
+      'studentId': studentId,
+      'status': status,
+    };
+    if (id != null) map['id'] = id;
+    if (studentName != null) map['studentName'] = studentName;
+    if (requestedAt != null) map['requestedAt'] = requestedAt!.toIso8601String();
+    return map;
+  }
 }

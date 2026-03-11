@@ -82,8 +82,14 @@ public class ClassroomsController : ControllerBase
     }
 
     [HttpPost("enroll")]
-    public async Task<IActionResult> Enroll(ClassEnrollment enrollment)
+    public async Task<IActionResult> Enroll([FromBody] ClassEnrollment enrollment)
     {
+        if (enrollment == null)
+        {
+            _logger.LogWarning("Enrollment attempt with null body");
+            return BadRequest("El cuerpo de la solicitud no puede estar vacío.");
+        }
+
         _logger.LogInformation("Enrollment attempt JSON: {Json}", System.Text.Json.JsonSerializer.Serialize(enrollment));
 
         if (string.IsNullOrEmpty(enrollment.StudentId))
