@@ -88,10 +88,10 @@ class ApiService {
         final List<dynamic> data = response.data;
         return data.map((json) => Project.fromJson(json)).toList();
       }
-      return [];
+      return <Project>[];
     } catch (e) {
       debugPrint('Get projects error: $e');
-      return [];
+      return <Project>[];
     }
   }
 
@@ -139,10 +139,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return (response.data as List).map((x) => Rubric.fromJson(x)).toList();
       }
-      return [];
+      return <Rubric>[];
     } catch (e) {
       debugPrint('Get rubrics error: $e');
-      return [];
+      return <Rubric>[];
     }
   }
 
@@ -196,10 +196,10 @@ class ApiService {
         final List<dynamic> data = response.data;
         return data.map((json) => Criterion.fromJson(json)).toList();
       }
-      return [];
+      return <Criterion>[];
     } catch (e) {
       debugPrint('Get criteria error: $e');
-      return [];
+      return <Criterion>[];
     }
   }
 
@@ -219,10 +219,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(response.data);
       }
-      return [];
+      return <Map<String, dynamic>>[];
     } catch (e) {
       debugPrint('Get rankings error: $e');
-      return [];
+      return <Map<String, dynamic>>[];
     }
   }
 
@@ -257,10 +257,10 @@ class ApiService {
         debugPrint('DEBUG: getAssignments returned ${data.length} items');
         return data.map((json) => Assignment.fromJson(json)).toList();
       }
-      return [];
+      return <Assignment>[];
     } catch (e) {
       debugPrint('Get assignments error: $e');
-      return [];
+      return <Assignment>[];
     }
   }
 
@@ -273,10 +273,10 @@ class ApiService {
         debugPrint('DEBUG: Found ${data.length} assignments for classroom $classroomId');
         return data.map((json) => Assignment.fromJson(json)).toList();
       }
-      return [];
+      return <Assignment>[];
     } catch (e) {
       debugPrint('DEBUG: Error in getAssignmentsByClassroom: $e');
-      return [];
+      return <Assignment>[];
     }
   }
 
@@ -383,10 +383,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return (response.data as List).map((x) => Classroom.fromJson(x)).toList();
       }
-      return [];
+      return <Classroom>[];
     } catch (e) {
       debugPrint('Get classrooms error: $e');
-      return [];
+      return <Classroom>[];
     }
   }
 
@@ -465,10 +465,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return (response.data as List).map((x) => ClassEnrollment.fromJson(x)).toList();
       }
-      return [];
+      return <ClassEnrollment>[];
     } catch (e) {
       debugPrint('Get class members error: $e');
-      return [];
+      return <ClassEnrollment>[];
     }
   }
 

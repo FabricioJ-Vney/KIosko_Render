@@ -307,13 +307,13 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
       Future.wait([
         _apiService.getClassMembers(classroom.id ?? ''),
         _apiService.getAssignmentsByClassroom(classroom.id ?? ''),
-        if (widget.role.toLowerCase() == 'student') _apiService.getProjects(studentId: widget.userId ?? '') else Future.value([] as List<Project>),
+        if (widget.role.toLowerCase() == 'student') _apiService.getProjects(studentId: widget.userId ?? '') else Future.value(<Project>[]),
       ]).then((results) {
         if (mounted) {
           setState(() {
-            members = results[0] as List<ClassEnrollment>;
-            assignments = results[1] as List<Assignment>;
-            studentProjects = results[2] as List<Project>;
+            members = List<ClassEnrollment>.from(results[0]);
+            assignments = List<Assignment>.from(results[1]);
+            studentProjects = List<Project>.from(results[2]);
             loadingDetails = false;
           });
           debugPrint('DEBUG: Loaded ${assignments.length} assignments for this classroom');
