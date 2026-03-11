@@ -44,24 +44,18 @@ public class AssignmentsController : ControllerBase
 
         if (!string.IsNullOrEmpty(teacherId))
         {
-            // 1. Assignments where they are explicitly the teacher
-            var directAssignments = await _assignmentService.GetByTeacherAsync(teacherId);
-            
-            // 2. Assignments linked to classrooms they own
             var teacherClasses = await _classroomService.GetByTeacherAsync(teacherId);
-            var classIds = teacherClasses.Select(c => c.Id).ToList();
+            var classIds = teacherClasses.Select(c => c.Id).Where(id => id != null).ToList();
             
+            var allAssignments = new List<Assignment>();
             foreach (var classId in classIds)
             {
-                if (classId != null)
-                {
-                    var classAssignments = await _assignmentService.GetByClassAsync(classId);
-                    directAssignments.AddRange(classAssignments);
-                }
+                var classAssignments = await _assignmentService.GetByClassAsync(classId!);
+                allAssignments.AddRange(classAssignments);
             }
             
             // Ensure unique results
-            return directAssignments
+            return allAssignments
                 .GroupBy(a => a.Id)
                 .Select(g => g.First())
                 .ToList();

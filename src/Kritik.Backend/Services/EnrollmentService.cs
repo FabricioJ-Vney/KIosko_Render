@@ -35,4 +35,7 @@ public class EnrollmentService
 
     public async Task RemoveAsync(string id) =>
         await _enrollmentCollection.DeleteOneAsync(x => x.Id == id);
+
+    public async Task RemoveByClassroomAsync(string classroomId) =>
+        await _enrollmentCollection.DeleteManyAsync(x => x.ClassroomId == classroomId);
 }

@@ -10,13 +10,15 @@ public class ClassroomsController : ControllerBase
 {
     private readonly ClassroomService _classroomService;
     private readonly EnrollmentService _enrollmentService;
+    private readonly AssignmentService _assignmentService;
     private readonly UserService _userService;
     private readonly ILogger<ClassroomsController> _logger;
 
-    public ClassroomsController(ClassroomService classroomService, EnrollmentService enrollmentService, UserService userService, ILogger<ClassroomsController> logger)
+    public ClassroomsController(ClassroomService classroomService, EnrollmentService enrollmentService, AssignmentService assignmentService, UserService userService, ILogger<ClassroomsController> logger)
     {
         _classroomService = classroomService;
         _enrollmentService = enrollmentService;
+        _assignmentService = assignmentService;
         _userService = userService;
         _logger = logger;
     }
@@ -186,6 +188,10 @@ public class ClassroomsController : ControllerBase
         var classroom = await _classroomService.GetAsync(id);
         if (classroom is null) return NotFound();
 
+        // Cascade delete
+        await _assignmentService.RemoveByClassroomAsync(id);
+        await _enrollmentService.RemoveByClassroomAsync(id);
+        
         await _classroomService.RemoveAsync(id);
         return NoContent();
     }

@@ -37,4 +37,7 @@ public class AssignmentService
 
     public async Task RemoveAsync(string id) =>
         await _assignmentsCollection.DeleteOneAsync(x => x.Id == id);
+
+    public async Task RemoveByClassroomAsync(string classroomId) =>
+        await _assignmentsCollection.DeleteManyAsync(x => x.ClassroomId == classroomId);
 }
