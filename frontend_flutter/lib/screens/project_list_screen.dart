@@ -291,35 +291,35 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                         contentPadding: const EdgeInsets.all(16),
                         leading: CircleAvatar(
                           backgroundColor: isSubmitted ? Colors.green.withOpacity(0.2) : (isExpired ? Colors.red.withOpacity(0.2) : AppColors.primaryYellow.withOpacity(0.2)),
-                        child: Icon(
-                          isSubmitted ? Icons.check : (isExpired ? Icons.priority_high : Icons.assignment),
-                          color: isSubmitted ? Colors.green : (isExpired ? Colors.red : AppColors.primaryYellow),
-                        ),
-                      ),
-                      title: Text(a.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(a.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(Icons.access_time, size: 14, color: isExpired && !isSubmitted ? Colors.red : Colors.grey),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Vence: ${a.dueDate != null ? "${a.dueDate!.day}/${a.dueDate!.month} ${a.dueDate!.hour.toString().padLeft(2, '0')}:${a.dueDate!.minute.toString().padLeft(2, '0')}" : "Sin fecha"}',
-                                style: TextStyle(
-                                  color: isExpired && !isSubmitted ? Colors.red : Colors.grey,
-                                  fontWeight: isExpired && !isSubmitted ? FontWeight.bold : FontWeight.normal,
-                                  fontSize: 12
-                                ),
-                              ),
-                            ],
+                          child: Icon(
+                            isSubmitted ? Icons.check : (isExpired ? Icons.priority_high : Icons.assignment),
+                            color: isSubmitted ? Colors.green : (isExpired ? Colors.red : AppColors.primaryYellow),
                           ),
-                        ],
-                      ),
-                      trailing: const Icon(Icons.chevron_right, color: AppColors.primaryYellow),
+                        ),
+                        title: Text(a.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(a.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.access_time, size: 14, color: isExpired && !isSubmitted ? Colors.red : Colors.grey),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Vence: ${a.dueDate != null ? "${a.dueDate!.day}/${a.dueDate!.month} ${a.dueDate!.hour.toString().padLeft(2, '0')}:${a.dueDate!.minute.toString().padLeft(2, '0')}" : "Sin fecha"}',
+                                  style: TextStyle(
+                                    color: isExpired && !isSubmitted ? Colors.red : Colors.grey,
+                                    fontWeight: isExpired && !isSubmitted ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 12
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        trailing: const Icon(Icons.chevron_right, color: AppColors.primaryYellow),
                       onTap: (isSubmitted || isExpired) ? null : () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(
                           studentId: widget.userId ?? '',
@@ -329,9 +329,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                     ),
                   );
                 },
-              );
-            }
-          ),
+              ),
         ),
       ],
     );
