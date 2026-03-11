@@ -20,7 +20,7 @@ public class UploadController : ControllerBase
             return BadRequest("No file uploaded.");
 
         // Create uploads folder if it doesn't exist
-        var uploadsPath = Path.Combine(_environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads");
+        var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
         if (!Directory.Exists(uploadsPath))
             Directory.CreateDirectory(uploadsPath);
 
