@@ -186,46 +186,45 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                   
                   if (_isLoadingProject)
                     const LinearProgressIndicator()
-                  else if (_project != null && _project!.coverImageUrl != null) ...[
-                    const Text('Archivo entregado por el alumno:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                  else if (_project != null) ...[
+                    const Text('Archivos Entregados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 12),
+                    
+                    // Show Videos
+                    if (_project!.videos.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8, bottom: 4),
+                        child: Text('Videos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blue)),
                       ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Icon(_getFileIcon(_project!.coverImageUrl), color: Colors.blue),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _project!.coverImageUrl!.split('/').last,
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          ElevatedButton.icon(
-                            onPressed: () => _openFileExternally(_project!.coverImageUrl!),
-                            icon: const Icon(Icons.open_in_new, size: 18),
-                            label: const Text('Abrir con App Local (Fotos/Galería/Video)'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade600,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(double.infinity, 40),
-                            ),
-                          ),
-                        ],
+                      ..._project!.videos.map((v) => _buildFileCard(v.title, v.url, Icons.video_file, Colors.blue)),
+                    ],
+                    
+                    // Show Documents
+                    if (_project!.documents.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8, bottom: 4),
+                        child: Text('Documentos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green)),
                       ),
-                    ),
+                      ..._project!.documents.map((d) => _buildFileCard(d.title, d.url, Icons.description, Colors.green)),
+                    ],
+                    
+                    // Show Legacy/Other (CoverImageUrl)
+                    if (_project!.coverImageUrl != null && 
+                        _project!.coverImageUrl!.isNotEmpty &&
+                        !_project!.videos.any((v) => v.url == _project!.coverImageUrl) &&
+                        !_project!.documents.any((d) => d.url == _project!.coverImageUrl)) ...[
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8, bottom: 4),
+                        child: Text('Otros Archivos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.orange)),
+                      ),
+                      _buildFileCard('Archivo Principal', _project!.coverImageUrl!, Icons.insert_drive_file, Colors.orange),
+                    ],
+
+                    if (_project!.videos.isEmpty && _project!.documents.isEmpty && (_project!.coverImageUrl == null || _project!.coverImageUrl!.isEmpty))
+                      const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text('No hay archivos adjuntos en esta entrega.', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
+                      ),
                   ],
                   const SizedBox(height: 24),
                   
@@ -346,6 +345,49 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Widget _buildFileCard(String title, String url, IconData icon, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () => _openFileExternally(url),
+            icon: const Icon(Icons.open_in_new, size: 18),
+            label: const Text('Abrir con App Local'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 36),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
       ),
     );
   }

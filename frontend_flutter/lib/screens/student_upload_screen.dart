@@ -429,34 +429,43 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                const SizedBox(height: 16),
+                Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _errorMessage = null;
+                      _isLoadingAssignments = true;
+                    });
+                    _fetchAssignments();
+                  },
+                  child: const Text('Reintentar'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Subir Mi Proyecto'),
         elevation: 0,
       ),
-      body: _errorMessage != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                    const SizedBox(height: 16),
-                    Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() => _errorMessage = null);
-                        _fetchAssignments();
-                      },
-                      child: const Text('Reintentar'),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : SingleChildScrollView(
+      body: SafeArea(
+        child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Form(
           key: _formKey,
@@ -632,6 +641,50 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                   prefixIcon: Icon(Icons.ondemand_video),
                 ),
               ),
+              if (_existingProject != null) ...[
+                const SizedBox(height: 32),
+                const Text('Archivos Entregados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+                if (_existingProject!.videos.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('Videos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blue)),
+                  ),
+                  ..._existingProject!.videos.map((v) => ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.video_file, color: Colors.blue),
+                    title: Text(v.title),
+                    trailing: const Icon(Icons.open_in_new, size: 18),
+                    onTap: () => _openUrl(v.url),
+                  )),
+                ],
+                if (_existingProject!.documents.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('Documentos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green)),
+                  ),
+                  ..._existingProject!.documents.map((d) => ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.description, color: Colors.green),
+                    title: Text(d.title),
+                    trailing: const Icon(Icons.open_in_new, size: 18),
+                    onTap: () => _openUrl(d.url),
+                  )),
+                ],
+                if (_existingProject!.coverImageUrl != null && _existingProject!.coverImageUrl!.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('Otros Archivos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.orange)),
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.insert_drive_file, color: Colors.orange),
+                    title: const Text('Archivo Principal'),
+                    trailing: const Icon(Icons.open_in_new, size: 18),
+                    onTap: () => _openUrl(_existingProject!.coverImageUrl!),
+                  ),
+                ],
+              ],
               const SizedBox(height: 32),
               const Text('Documentación (Videos, Código, PDF, Imágenes)', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
@@ -708,6 +761,24 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openUrl(String? url) async {
+    if (url == null || url.isEmpty) return;
+    final uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se pudo abrir el enlace automáticamente.')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+    }
   }
 
   IconData _getFileIcon(String? extension) {
