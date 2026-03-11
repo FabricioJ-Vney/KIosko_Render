@@ -35,7 +35,7 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
     try {
       final classrooms = (widget.role.toLowerCase() == 'evaluator')
           ? await _apiService.getClassrooms(teacherId: widget.userId)
-          : await _apiService.getClassrooms();
+          : await _apiService.getClassrooms(studentId: widget.userId);
       
       setState(() {
         _classrooms = classrooms;
