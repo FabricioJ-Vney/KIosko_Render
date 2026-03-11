@@ -66,7 +66,12 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 
-app.UseStaticFiles(); // Enable static files for /uploads
+app.UseStaticFiles(new StaticFileOptions
+{
+    ServeUnknownFileTypes = true,
+    DefaultContentType = "application/octet-stream"
+}); // Enable static files for /uploads
+
 
 app.UseCors("AllowAll");
 
